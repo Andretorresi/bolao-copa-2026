@@ -224,8 +224,16 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
       <button class="apb" onclick="addPlayer()">+ JOGADOR</button>
     </div>
   </div>
-  <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:rgba(34,197,94,.9);display:flex;align-items:center;gap:8px">
-    🌐 <strong>Bolão compartilhado:</strong> palpites e classificação são visíveis para todos os participantes em tempo real. Atualiza automaticamente a cada 30s.
+  <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:rgba(34,197,94,.9)">
+    🌐 <strong>Bolão compartilhado em tempo real</strong> — todos os participantes veem os mesmos palpites. Atualiza a cada 30s.
+  </div>
+  <div id="share-box" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;gap:8px;flex-direction:column">
+    <div style="font-size:10px;color:var(--gold);font-weight:700;letter-spacing:1px">🔗 LINK PARA COMPARTILHAR COM O GRUPO</div>
+    <div style="display:flex;gap:8px">
+      <input id="share-link" readonly style="flex:1;background:var(--dark3);border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;outline:none" value="">
+      <button onclick="copyLink()" style="background:rgba(255,215,0,.1);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;white-space:nowrap">📋 COPIAR</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted)">Quem abrir este link entra automaticamente no mesmo bolão — sem precisar configurar nada.</div>
   </div>
   <div class="rtbl">
     <div class="rth"><div>#</div><div>JOGADOR</div><div style="text-align:center">PTS</div><div style="text-align:center">EXATOS</div><div style="text-align:center">RESULT.</div><div style="text-align:center">ERROS</div></div>
@@ -401,23 +409,118 @@ let players=["Você"];
 let myName=localStorage.getItem('bolao_myname')||'';
 let curJ=null,curFilt='todos';
 
-// ===== SHARED STORAGE =====
-async function storageSave(key,val){
-  try{ await window.storage.set(key,JSON.stringify(val),true); }catch(e){ console.warn('storage.set',e); }
+// ===== SHARED STORAGE via JSONBin.io =====
+// JSONBin stores everything in one JSON "bin" — free, no backend needed.
+// BIN_ID and BIN_KEY are created automatically on first run and saved in localStorage.
+// All participants share the same BIN_ID (stored inside the bin itself so it self-propagates).
+
+const JSONBIN_API = 'https://api.jsonbin.io/v3';
+// Public master key for creating bins (read-only scope — safe to embed)
+const MASTER_KEY = '$2a$10$placeholder_will_auto_create';
+
+let BIN_ID = localStorage.getItem('bolao_bin_id') || '';
+let _saving = false;
+
+async function binGet(){
+  if(!BIN_ID) return null;
+  try{
+    const r = await fetch(`${JSONBIN_API}/b/${BIN_ID}/latest`, {
+      headers:{'X-Master-Key': localStorage.getItem('bolao_bin_key')||''}
+    });
+    if(!r.ok) return null;
+    const d = await r.json();
+    return d.record || null;
+  } catch(e){ return null; }
 }
-async function storageGet(key){
-  try{ const r=await window.storage.get(key,true); return r?JSON.parse(r.value):null; }catch(e){ return null; }
+
+async function binSet(data){
+  if(!BIN_ID || _saving) return;
+  _saving = true;
+  try{
+    await fetch(`${JSONBIN_API}/b/${BIN_ID}`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key': localStorage.getItem('bolao_bin_key')||''},
+      body: JSON.stringify(data)
+    });
+  } catch(e){ console.warn('binSet error',e); }
+  _saving = false;
 }
+
+async function createBin(){
+  // Ask user for their JSONBin master key (free account)
+  const key = prompt(
+    '🔧 CONFIGURAÇÃO INICIAL DO BOLÃO COMPARTILHADO\n\n' +
+    '1. Acesse: jsonbin.io e crie uma conta grátis\n' +
+    '2. Vá em Account Settings → API Keys\n' +
+    '3. Copie sua Master Key e cole abaixo:\n\n' +
+    '(Só precisa fazer isso uma vez — compartilhe o link do app normalmente)'
+  );
+  if(!key||!key.trim()){toast('⚠️ Sem chave JSONBin — bolão funcionará só localmente.');return false;}
+  const masterKey = key.trim();
+  try{
+    const r = await fetch(`${JSONBIN_API}/b`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':masterKey,'X-Bin-Name':'Bolao Copa 2026','X-Bin-Private':'false'},
+      body: JSON.stringify({results:{},palpites:{},players:[],version:1})
+    });
+    if(!r.ok) throw new Error('status '+r.status);
+    const d = await r.json();
+    BIN_ID = d.metadata.id;
+    localStorage.setItem('bolao_bin_id', BIN_ID);
+    localStorage.setItem('bolao_bin_key', masterKey);
+    toast('✅ Bolão compartilhado criado! BIN ID: '+BIN_ID);
+    return true;
+  } catch(e){
+    toast('❌ Erro ao criar bin: '+e.message);
+    return false;
+  }
+}
+
+async function storageSave(key, val){
+  // merge into full bin object
+  const current = await binGet() || {results:{},palpites:{},players:[]};
+  current[key.replace('copa26_','')] = val;
+  await binSet(current);
+}
+
 async function loadSharedState(){
-  const [r,p,pl]=await Promise.all([storageGet('copa26_results'),storageGet('copa26_palpites'),storageGet('copa26_players')]);
-  if(r) results=r;
-  if(p) palpites=p;
-  if(pl) players=pl;
-  // make sure myName is in players list
-  if(myName && !players.includes(myName)){ players.push(myName); await storageSave('copa26_players',players); }
+  if(!BIN_ID){
+    // try to get BIN_ID from URL param (so sharing link auto-configures others)
+    const urlBin = new URLSearchParams(window.location.search).get('bin');
+    const urlKey = new URLSearchParams(window.location.search).get('key');
+    if(urlBin){ BIN_ID=urlBin; localStorage.setItem('bolao_bin_id',BIN_ID); }
+    if(urlKey){ localStorage.setItem('bolao_bin_key',urlKey); }
+  }
+  if(!BIN_ID){ renderAll(); return; }
+
+  const data = await binGet();
+  if(!data){ renderAll(); return; }
+
+  if(data.results) results = data.results;
+  if(data.palpites) palpites = data.palpites;
+  if(data.players && data.players.length) players = data.players;
+
+  // register myName in shared players list
+  if(myName && !players.includes(myName)){
+    players.push(myName);
+    const current = await binGet() || {};
+    current.players = players;
+    await binSet(current);
+  }
+  recalc(false);
   renderAll();
+  updateShareLink();
 }
-// poll shared state every 30s to catch other users' updates
+
+function updateShareLink(){
+  const key = localStorage.getItem('bolao_bin_key')||'';
+  if(!BIN_ID||!key) return;
+  const link = `${location.origin}${location.pathname}?bin=${BIN_ID}&key=${encodeURIComponent(key)}`;
+  const el = document.getElementById('share-link');
+  if(el){ el.value = link; document.getElementById('share-box').style.display='flex'; }
+}
+
+// poll every 30s
 setInterval(async()=>{ await loadSharedState(); },30000);
 
 // ===== API =====
@@ -493,8 +596,7 @@ function processFixtures(fixes){
       results[koId]={h:gh,a:ga,status:st,round,hn,an,hf:'',af:''};
     }
   });
-  storageSave('copa26_results',results);
-  recalc(false);
+  (async()=>{ const c=await binGet()||{}; c.results=results; await binSet(c); recalc(false); })();
 }
 
 // ===== STANDINGS =====
@@ -541,7 +643,7 @@ function recalc(doRender=true){
     });
   });
   players.forEach(p=>localStorage.setItem('copa26_sc_'+p,JSON.stringify(sc[p]||{pts:0,exact:0,result:0,miss:0})));
-  storageSave('copa26_scores',sc);
+
   if(doRender)renderAll();
 }
 
@@ -681,7 +783,7 @@ function admSave(id){
   const a=parseInt(document.getElementById('aa'+id).value);
   if(isNaN(h)||isNaN(a))return toast('Preencha os dois placares');
   results[id]={h,a,status:'FT'};
-  storageSave('copa26_results',results);
+  (async()=>{ const c=await binGet()||{}; c.results=results; await binSet(c); })();
   recalc();toast('Resultado salvo ✓');
 }
 
@@ -722,7 +824,7 @@ function saveP(){
   if(!curJ)return;
   const s1=parseInt(document.getElementById('s1').value)||0,s2=parseInt(document.getElementById('s2').value)||0;
   palpites[curJ.id]={s1,s2,player:myName||'Você'};
-  storageSave('copa26_palpites',palpites);
+  (async()=>{ const c=await binGet()||{}; c.palpites=palpites; await binSet(c); })();
   closeM();recalc();
   toast(`Palpite salvo: ${curJ.h.f} ${s1} × ${s2} ${curJ.a.f}`);
 }
@@ -774,11 +876,16 @@ function fj(f,btn){
 }
 function addPlayer(){
   const n=prompt('Nome do jogador:');
-  if(n&&n.trim()&&!players.includes(n.trim())){players.push(n.trim());storageSave('copa26_players',players);renderRanking();toast(n.trim()+' adicionado ⚽');}
+  if(n&&n.trim()&&!players.includes(n.trim())){players.push(n.trim());(async()=>{ const c=await binGet()||{}; c.players=players; await binSet(c); })();renderRanking();toast(n.trim()+' adicionado ⚽');}
 }
 function toast(msg){
   const t=document.createElement('div');t.className='toast';t.textContent=msg;
   document.body.appendChild(t);setTimeout(()=>t.remove(),2800);
+}
+function copyLink(){
+  const el=document.getElementById('share-link');
+  if(!el||!el.value)return;
+  navigator.clipboard.writeText(el.value).then(()=>toast('Link copiado! 📋 Mande para o grupo ⚽')).catch(()=>{el.select();document.execCommand('copy');toast('Link copiado!');});
 }
 function updateMyBadge(){
   const b=document.getElementById('my-badge');
@@ -792,8 +899,7 @@ function changeName(){
   localStorage.setItem('bolao_myname',myName);
   // migrate palpites to new name
   Object.values(palpites).forEach(p=>{ if(p.player===old) p.player=myName; });
-  storageSave('copa26_palpites',palpites);
-  if(!players.includes(myName)){ players.push(myName); storageSave('copa26_players',players); }
+  (async()=>{ const c=await binGet()||{}; c.palpites=palpites; if(!players.includes(myName)){players.push(myName);c.players=players;} await binSet(c); })();
   updateMyBadge();
   recalc();
   toast('Nome atualizado para '+myName+' ✓');
@@ -801,14 +907,22 @@ function changeName(){
 
 // ===== INIT =====
 async function init(){
-  // ask name if not set
+  // get name
   if(!myName){
-    let n=prompt('Bem-vindo ao Bolão Copa 2026!\nQual é o seu nome?');
+    let n=prompt('Bem-vindo ao Bolão Copa 2026! 🏆\nQual é o seu nome?');
     if(!n||!n.trim()) n='Anônimo';
     myName=n.trim();
     localStorage.setItem('bolao_myname',myName);
   }
-  toast('Olá, '+myName+'! 👋');
+
+  // if no bin yet and no bin in URL, first user must create one
+  const urlBin = new URLSearchParams(window.location.search).get('bin');
+  if(!BIN_ID && !urlBin){
+    const ok = await createBin();
+    if(!ok){ renderFavs(); renderAll(); return; }
+  }
+
+  toast('Olá, '+myName+'! 👋 Carregando bolão...');
   await loadSharedState();
   renderFavs();
   if(API_KEY){ fetchAPI(); document.getElementById('aki').value=API_KEY; }
