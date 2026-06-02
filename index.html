@@ -167,7 +167,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
     <button class="nb" onclick="show('chave',this)">CHAVEAMENTO</button>
     <button class="nb" onclick="show('bolao',this)">BOLÃO</button>
     <button class="nb" onclick="show('stats',this)">IA / ANÁLISE</button>
-    <button class="nb" onclick="show('admin',this)">⚙️ ADMIN</button>
+    <button class="nb" id="admin-nav-btn" onclick="show('admin',this)" style="display:none">⚙️ ADMIN</button>
   </nav>
 </header>
 
@@ -306,15 +306,22 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
 </div>
 
 <div id="s-admin" class="sec">
+  <div id="admin-blocked" style="display:none;text-align:center;padding:60px 20px">
+    <div style="font-size:48px;margin-bottom:16px">🔒</div>
+    <div style="font-family:'Bebas Neue';font-size:24px;color:var(--gold);letter-spacing:2px;margin-bottom:8px">ACESSO RESTRITO</div>
+    <div style="font-size:13px;color:var(--muted)">Esta área é exclusiva do administrador do bolão.</div>
+  </div>
+  <div id="admin-content">
   <div class="ap">
     <div class="aptit">⚙️ PAINEL ADMIN — RESULTADOS MANUAIS</div>
     <p style="font-size:11px;color:var(--muted);margin-bottom:6px">Use quando a API não retornar dados. Preencha o placar e clique SALVAR. Classificação e bolão são atualizados para <strong>todos os participantes</strong> automaticamente.</p>
     <p style="font-size:10px;color:#ff8c00;margin-bottom:12px">⚠️ Os resultados inseridos aqui são compartilhados — só o administrador do bolão deve preencher.</p>
     <div class="agrid" id="adm"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-      <button onclick="recalc()" style="background:rgba(255,140,0,.1);border:1px solid #ff8c00;color:#ff8c00;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif">🔄 RECALCULAR TUDO</button>
+      <button onclick="adminRecalc()" style="background:rgba(255,140,0,.1);border:1px solid #ff8c00;color:#ff8c00;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif">🔄 RECALCULAR TUDO</button>
       <button onclick="resetPlayers()" style="background:rgba(239,68,68,.08);border:1px solid #ef4444;color:#ef4444;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif">🗑️ LIMPAR CADASTROS DUPLICADOS</button>
     </div>
+  </div>
   </div>
 </div>
 
@@ -404,15 +411,21 @@ const JOGOS=[
 
 const FAVS=[{n:'Brasil',f:'🇧🇷',p:85},{n:'França',f:'🇫🇷',p:80},{n:'Argentina',f:'🇦🇷',p:78},{n:'Espanha',f:'🇪🇸',p:72},{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',p:68},{n:'Alemanha',f:'🇩🇪',p:62},{n:'Portugal',f:'🇵🇹',p:58}];
 
+// ===== ADMIN CONFIG =====
+const ADMIN_USERNAME = 'atorresi'; // only this user sees the Admin tab
+
 // ===== STATE =====
 let API_KEY=localStorage.getItem('apifb_key')||'';
 let results={};
 let palpites={};
-let players={}; // {code: {name, username, code}}
+let players={};
 let myName=localStorage.getItem('bolao_myname')||'';
 let myCode=localStorage.getItem('bolao_mycode')||'';
-let myUsername=localStorage.getItem('bolao_myusername')||''; // unique login, case-insensitive
+let myUsername=localStorage.getItem('bolao_myusername')||'';
 let curJ=null,curFilt='todos';
+
+// Single source of truth: is current user admin?
+function isAdmin(){ return myUsername === ADMIN_USERNAME; }
 
 // generate a random 6-char code like BRA042
 function genCode(){
@@ -833,6 +846,7 @@ function calcSt(){
 }
 
 // ===== BOLÃO SCORE =====
+function adminRecalc(){ if(!isAdmin()){ toast('⛔ Acesso restrito.'); return; } recalc(); }
 function recalc(doRender=true){
   const sc={};
   Object.values(players).forEach(p=>{ if(p&&p.name) sc[p.username||p.code]={pts:0,exact:0,result:0,miss:0,name:p.name,username:p.username||'',code:p.code||''}; });
@@ -997,6 +1011,7 @@ function renderFavs(){
 
 // ===== ADMIN SAVE =====
 function admSave(id){
+  if(!isAdmin()){ toast('⛔ Acesso restrito.'); return; }
   const h=parseInt(document.getElementById('ah'+id).value);
   const a=parseInt(document.getElementById('aa'+id).value);
   if(isNaN(h)||isNaN(a))return toast('Preencha os dois placares');
@@ -1083,10 +1098,20 @@ async function getMIA(){
 
 // ===== UTILS =====
 function show(id,btn){
+  // Hard block: non-admins cannot open admin section by any means
+  if(id==='admin' && !isAdmin()){
+    toast('⛔ Acesso restrito ao administrador.');
+    return;
+  }
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('s-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
+  // keep admin content/blocked in sync
+  if(id==='admin'){
+    document.getElementById('admin-blocked').style.display='none';
+    document.getElementById('admin-content').style.display='block';
+  }
 }
 function fj(f,btn){
   document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
@@ -1105,9 +1130,24 @@ function copyLink(){
   if(!el||!el.value)return;
   navigator.clipboard.writeText(el.value).then(()=>toast('Link copiado! 📋 Mande para o grupo ⚽')).catch(()=>{el.select();document.execCommand('copy');toast('Link copiado!');});
 }
+
 function updateMyBadge(){
   const b=document.getElementById('my-badge');
-  if(b) b.textContent='⚽ '+(myName||'Anônimo')+' · 👤 @'+(myUsername||myCode||'—');
+  if(b) b.textContent='⚽ '+(myName||'Anônimo')+' · 👤 @'+(myUsername||'—');
+  applyAdminVisibility();
+}
+
+function applyAdminVisibility(){
+  // nav button: only visible to admin
+  const adminBtn = document.getElementById('admin-nav-btn');
+  if(adminBtn) adminBtn.style.display = isAdmin() ? 'inline-block' : 'none';
+  // if admin section is currently active and user is not admin, kick to grupos
+  if(document.getElementById('s-admin').classList.contains('active') && !isAdmin()){
+    document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+    document.getElementById('s-grupos').classList.add('active');
+    document.querySelector('.nb').classList.add('active');
+  }
 }
 function changeName(){
   const n=prompt('Novo nome no bolão:',myName);
@@ -1127,6 +1167,7 @@ function changeName(){
 
 // ===== ADMIN: RESET PLAYERS =====
 async function resetPlayers(){
+  if(!isAdmin()){ toast('⛔ Acesso restrito.'); return; }
   if(!confirm('⚠️ Isso vai apagar TODOS os cadastros do bolão.\nCada participante precisará se cadastrar novamente.\n\nTem certeza?')) return;
   players = {};
   const current = await binGet() || {};
@@ -1145,6 +1186,16 @@ async function resetPlayers(){
 }
 
 // ===== INIT =====
+// Apply admin visibility immediately on load (before async init)
+// This prevents any flash of the admin button for non-admins
+(function(){
+  const adminBtn = document.getElementById('admin-nav-btn');
+  if(adminBtn){
+    const u = localStorage.getItem('bolao_myusername')||'';
+    adminBtn.style.display = (u === ADMIN_USERNAME) ? 'inline-block' : 'none';
+  }
+})();
+
 async function init(){
   const urlBin  = new URLSearchParams(window.location.search).get('bin');
   const urlCode = new URLSearchParams(window.location.search).get('code');
