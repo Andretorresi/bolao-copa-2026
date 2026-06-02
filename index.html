@@ -510,9 +510,22 @@ async function loadSharedState(){
 
   if(data.results) results = data.results;
   if(data.palpites) palpites = data.palpites;
-  if(data.players) players = data.players;
 
-  // register this player if not yet in shared players dict
+  // Migrate players: old format was array of strings, new is {code: {name,code}}
+  if(data.players){
+    if(Array.isArray(data.players)){
+      // Old format — discard, will re-register current user below
+      players = {};
+    } else {
+      // New format — filter out any malformed entries
+      players = {};
+      Object.entries(data.players).forEach(([k,v])=>{
+        if(v && v.name && v.code) players[k] = v;
+      });
+    }
+  }
+
+  // Register this player if not yet in shared players dict
   if(myCode && myName){
     if(!players[myCode]){
       players[myCode] = {name:myName, code:myCode};
@@ -520,8 +533,6 @@ async function loadSharedState(){
       current.players = players;
       await binSet(current);
     } else {
-      // sync name from server (in case changed on another device)
-      // but keep local name as source of truth if server matches code
       myName = players[myCode].name;
       localStorage.setItem('bolao_myname', myName);
     }
@@ -643,7 +654,7 @@ function calcSt(){
 // ===== BOLÃO SCORE =====
 function recalc(doRender=true){
   const sc={};
-  Object.values(players).forEach(p=>sc[p.code]={pts:0,exact:0,result:0,miss:0,name:p.name,code:p.code});
+  Object.values(players).forEach(p=>{ if(p&&p.code) sc[p.code]={pts:0,exact:0,result:0,miss:0,name:p.name||'?',code:p.code}; });
   JOGOS.forEach(j=>{
     const res=results[j.id];
     if(!res||res.h===undefined)return;
@@ -761,11 +772,13 @@ function renderBracket(st){
 }
 
 function renderRanking(){
-  const rows=Object.values(players).map(p=>{
-    const s=JSON.parse(localStorage.getItem('copa26_sc_'+p.code)||'{"pts":0,"exact":0,"result":0,"miss":0}');
-    const palCount=Object.values(palpites).filter(x=>x.code===p.code).length;
-    return {...s,n:p.name,code:p.code,palCount};
-  }).sort((a,b)=>b.pts-a.pts);
+  const rows=Object.values(players)
+    .filter(p=>p&&p.name&&p.code)
+    .map(p=>{
+      const s=JSON.parse(localStorage.getItem('copa26_sc_'+p.code)||'{"pts":0,"exact":0,"result":0,"miss":0}');
+      const palCount=Object.values(palpites).filter(x=>x.code===p.code).length;
+      return {...s,n:p.name,code:p.code,palCount};
+    }).sort((a,b)=>b.pts-a.pts);
   const md=['🥇','🥈','🥉'],pc=['g','s','b'];
   document.getElementById('rb').innerHTML=rows.length?rows.map((r,i)=>`
     <div class="rr ${r.code===myCode?'my-row':''}">
