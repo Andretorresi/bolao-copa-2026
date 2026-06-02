@@ -311,7 +311,10 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
     <p style="font-size:11px;color:var(--muted);margin-bottom:6px">Use quando a API não retornar dados. Preencha o placar e clique SALVAR. Classificação e bolão são atualizados para <strong>todos os participantes</strong> automaticamente.</p>
     <p style="font-size:10px;color:#ff8c00;margin-bottom:12px">⚠️ Os resultados inseridos aqui são compartilhados — só o administrador do bolão deve preencher.</p>
     <div class="agrid" id="adm"></div>
-    <button onclick="recalc()" style="margin-top:14px;background:rgba(255,140,0,.1);border:1px solid #ff8c00;color:#ff8c00;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif">🔄 RECALCULAR TUDO</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button onclick="recalc()" style="background:rgba(255,140,0,.1);border:1px solid #ff8c00;color:#ff8c00;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif">🔄 RECALCULAR TUDO</button>
+      <button onclick="resetPlayers()" style="background:rgba(239,68,68,.08);border:1px solid #ef4444;color:#ef4444;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif">🗑️ LIMPAR CADASTROS DUPLICADOS</button>
+    </div>
   </div>
 </div>
 
@@ -414,6 +417,146 @@ let curJ=null,curFilt='todos';
 function genCode(){
   const prefix=['BRA','GOL','CUP','FIF','VAR','GOA','PEN','BIS'];
   return prefix[Math.floor(Math.random()*prefix.length)] + String(Math.floor(Math.random()*900)+100);
+}
+
+// ===== LOGIN MODAL =====
+function showLoginModal(mode){
+  // mode: 'new' = first time, 'returning' = already has account on another device
+  const overlay = document.createElement('div');
+  overlay.id = 'login-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:"DM Sans",sans-serif';
+
+  const isNew = mode === 'new';
+  overlay.innerHTML = `
+    <div style="background:#161625;border:1px solid rgba(255,215,0,.2);border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+      <div style="background:linear-gradient(135deg,rgba(255,215,0,.15),transparent);padding:22px 24px;border-bottom:1px solid rgba(255,215,0,.1);text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">⚽</div>
+        <div style="font-family:'Bebas Neue';font-size:24px;color:#FFD700;letter-spacing:3px">BOLÃO COPA 2026</div>
+        <div style="font-size:11px;color:#7777aa;margin-top:4px;letter-spacing:1px">${isNew ? 'PRIMEIRO ACESSO' : 'JÁ TENHO CADASTRO'}</div>
+      </div>
+      <div style="padding:24px">
+        ${isNew ? `
+          <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:18px;line-height:1.6">
+            Bem-vindo! Digite seu nome para criar seu perfil no bolão.<br>
+            <span style="color:#FFD700;font-size:11px">Você receberá um código único para acessar de qualquer dispositivo.</span>
+          </div>
+          <div style="font-size:11px;color:#7777aa;margin-bottom:6px;letter-spacing:1px">SEU NOME</div>
+          <input id="li-name" type="text" placeholder="Ex: João Silva" maxlength="30"
+            style="width:100%;background:#0f0f1a;border:1px solid rgba(255,215,0,.2);border-radius:8px;color:#e2e2ef;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:16px">
+          <button onclick="doNewLogin()" style="width:100%;background:linear-gradient(135deg,#FFD700,#FFA500);border:none;color:#000;font-weight:700;font-size:14px;padding:12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.5px">
+            CRIAR MEU PERFIL ⚽
+          </button>
+          <div style="text-align:center;margin-top:14px">
+            <span style="font-size:12px;color:#7777aa">Já se cadastrou antes? </span>
+            <button onclick="switchLogin('returning')" style="background:none;border:none;color:#FFD700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">Usar meu código</button>
+          </div>
+        ` : `
+          <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:18px;line-height:1.6">
+            Digite o código que você recebeu no primeiro cadastro para entrar com o mesmo perfil.
+          </div>
+          <div style="font-size:11px;color:#7777aa;margin-bottom:6px;letter-spacing:1px">SEU CÓDIGO (ex: BRA042)</div>
+          <input id="li-code" type="text" placeholder="Ex: BRA042" maxlength="8"
+            style="width:100%;background:#0f0f1a;border:1px solid rgba(255,215,0,.2);border-radius:8px;color:#FFD700;padding:11px 14px;font-size:18px;font-family:'Bebas Neue';letter-spacing:4px;outline:none;margin-bottom:6px;text-transform:uppercase">
+          <div id="li-err" style="font-size:11px;color:#ef4444;min-height:16px;margin-bottom:10px"></div>
+          <button onclick="doCodeLogin()" style="width:100%;background:linear-gradient(135deg,#FFD700,#FFA500);border:none;color:#000;font-weight:700;font-size:14px;padding:12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.5px">
+            ENTRAR COM MEU CÓDIGO 🔑
+          </button>
+          <div style="text-align:center;margin-top:14px">
+            <span style="font-size:12px;color:#7777aa">Primeiro acesso? </span>
+            <button onclick="switchLogin('new')" style="background:none;border:none;color:#FFD700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">Criar novo perfil</button>
+          </div>
+        `}
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // focus input
+  setTimeout(()=>{
+    const inp = document.getElementById(isNew ? 'li-name' : 'li-code');
+    if(inp){ inp.focus(); inp.addEventListener('keydown', e=>{ if(e.key==='Enter') isNew?doNewLogin():doCodeLogin(); }); }
+  }, 100);
+}
+
+function switchLogin(mode){
+  const el = document.getElementById('login-overlay');
+  if(el) el.remove();
+  showLoginModal(mode);
+}
+
+async function doNewLogin(){
+  const inp = document.getElementById('li-name');
+  const name = inp ? inp.value.trim() : '';
+  if(!name){ inp.style.borderColor='#ef4444'; return; }
+
+  myName = name;
+  myCode = genCode();
+  localStorage.setItem('bolao_myname', myName);
+  localStorage.setItem('bolao_mycode', myCode);
+
+  // register in shared players
+  players[myCode] = {name:myName, code:myCode};
+  const current = await binGet() || {};
+  current.players = players;
+  await binSet(current);
+
+  // close modal
+  const el = document.getElementById('login-overlay');
+  if(el) el.remove();
+
+  // show code to user — MUST copy it
+  await new Promise(resolve=>{
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;font-family:"DM Sans",sans-serif';
+    box.innerHTML = `
+      <div style="background:#161625;border:2px solid #FFD700;border-radius:16px;width:100%;max-width:400px;padding:28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7)">
+        <div style="font-size:36px;margin-bottom:12px">🔑</div>
+        <div style="font-family:'Bebas Neue';font-size:20px;color:#FFD700;letter-spacing:2px;margin-bottom:8px">SEU CÓDIGO PESSOAL</div>
+        <div style="font-family:'Bebas Neue';font-size:52px;color:#fff;letter-spacing:8px;background:#0f0f1a;border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:12px;margin:12px 0">${myCode}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:20px">
+          ⚠️ <strong style="color:#FFD700">ANOTE ESTE CÓDIGO!</strong><br>
+          Para acessar o bolão em outro dispositivo<br>(celular, tablet), você precisará dele.<br>
+          Sem o código, um novo perfil será criado.
+        </div>
+        <button onclick="this.closest('div[style]').remove();(${resolve.toString()})()" style="width:100%;background:linear-gradient(135deg,#FFD700,#FFA500);border:none;color:#000;font-weight:700;font-size:14px;padding:12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif">
+          ANOTEI MEU CÓDIGO ✓
+        </button>
+      </div>`;
+    document.body.appendChild(box);
+  });
+
+  await loadSharedState();
+  renderFavs();
+  toast('Bem-vindo, ' + myName + '! 🎉');
+}
+
+async function doCodeLogin(){
+  const inp = document.getElementById('li-code');
+  const err = document.getElementById('li-err');
+  const code = inp ? inp.value.trim().toUpperCase() : '';
+  if(!code){ err.textContent='Digite seu código'; return; }
+
+  // load bin to check if code exists
+  err.textContent = '⏳ Verificando...';
+  const data = await binGet();
+  const pl = data && data.players ? data.players : {};
+
+  if(!pl[code]){
+    err.textContent = '❌ Código não encontrado. Verifique ou crie um novo perfil.';
+    return;
+  }
+
+  // found — restore profile
+  myCode = code;
+  myName = pl[code].name;
+  localStorage.setItem('bolao_mycode', myCode);
+  localStorage.setItem('bolao_myname', myName);
+
+  const el = document.getElementById('login-overlay');
+  if(el) el.remove();
+
+  await loadSharedState();
+  renderFavs();
+  toast('Bem-vindo de volta, ' + myName + '! 👋');
 }
 
 // ===== SHARED STORAGE via JSONBin.io =====
@@ -942,49 +1085,83 @@ function changeName(){
   toast('Nome atualizado para '+myName+' ✓');
 }
 
+// ===== ADMIN: RESET PLAYERS =====
+async function resetPlayers(){
+  if(!confirm('⚠️ Isso vai apagar TODOS os cadastros do bolão.\nCada participante precisará se cadastrar novamente.\n\nTem certeza?')) return;
+  players = {};
+  const current = await binGet() || {};
+  current.players = {};
+  current.palpites = {};
+  await binSet(current);
+  palpites = {};
+  // clear local identity too so admin re-registers
+  localStorage.removeItem('bolao_myname');
+  localStorage.removeItem('bolao_mycode');
+  myName = ''; myCode = '';
+  recalc();
+  toast('Cadastros limpos ✓ — Todos precisarão se cadastrar novamente.');
+  setTimeout(()=>showLoginModal('new'), 1500);
+}
+
 // ===== INIT =====
 async function init(){
   const urlBin  = new URLSearchParams(window.location.search).get('bin');
   const urlCode = new URLSearchParams(window.location.search).get('code');
 
-  // Restore code from URL (lets user enter from another device with same code)
-  if(urlCode && !myCode){
+  // If URL has a code, restore it (user shared their personal link)
+  if(urlCode){
     myCode = urlCode;
     localStorage.setItem('bolao_mycode', myCode);
+    // also need to get name from bin later in loadSharedState
   }
 
-  // First time on this device: ask name
-  if(!myName){
-    let n = prompt('\u26bd BEM-VINDO AO BOL\u00c3O COPA 2026! \ud83c\udfc6\n\nQual \u00e9 o seu nome?');
-    if(!n||!n.trim()) n = 'An\u00f4nimo';
-    myName = n.trim();
-    localStorage.setItem('bolao_myname', myName);
-  }
-
-  // Generate unique code if none exists yet
-  if(!myCode){
-    myCode = genCode();
-    localStorage.setItem('bolao_mycode', myCode);
-    setTimeout(()=>{
-      alert('\ud83d\udd11 SEU C\u00d3DIGO PESSOAL: ' + myCode
-        + '\n\nGuarde este c\u00f3digo! Ele \u00e9 sua identidade no bol\u00e3o em qualquer dispositivo.'
-        + '\n\nSe quiser entrar pelo celular ou outro aparelho sem perder seus palpites, acesse o link do bol\u00e3o e adicione no final:'
-        + '\n&code=' + myCode
-        + '\n\n(Anote aqui: ________________)');
-    }, 2000);
-  }
-
-  // Admin setup: if no bin yet and none in URL, create one (only first user)
+  // Setup bin (admin first-run, or load from URL)
   if(!BIN_ID && !urlBin){
     const ok = await createBin();
     if(!ok){ renderFavs(); renderAll(); return; }
   }
 
-  toast('Ol\u00e1, ' + myName + '! \ud83d\udc4b  C\u00f3digo: ' + myCode);
-  await loadSharedState();
-  renderFavs();
-  if(API_KEY){ fetchAPI(); document.getElementById('aki').value=API_KEY; }
-  else setAS('err','\u23f3 Copa come\u00e7a 11/jun \u2014 insira sua chave API ou use o Admin para resultados.');
+  // Load bin first so we can validate codes
+  const urlBinResolved = urlBin || BIN_ID;
+  if(urlBinResolved && !BIN_ID){
+    BIN_ID = urlBinResolved;
+    localStorage.setItem('bolao_bin_id', BIN_ID);
+  }
+
+  // Pre-load bin data to get adminKey and players
+  const binData = await binGet();
+  if(binData){
+    if(binData.adminKey && !localStorage.getItem('bolao_bin_key'))
+      localStorage.setItem('bolao_bin_key', binData.adminKey);
+    if(binData.players && !Array.isArray(binData.players)){
+      Object.entries(binData.players).forEach(([k,v])=>{
+        if(v&&v.name&&v.code) players[k]=v;
+      });
+    }
+  }
+
+  // If code came from URL, restore name from bin
+  if(urlCode && players[urlCode]){
+    myName = players[urlCode].name;
+    localStorage.setItem('bolao_myname', myName);
+  }
+
+  // Decide login flow
+  if(!myCode && !myName){
+    // Brand new visitor — show login modal
+    showLoginModal('new');
+    return; // loadSharedState called inside doNewLogin/doCodeLogin
+  } else if(myCode && myName){
+    // Returning user on same device — go straight in
+    await loadSharedState();
+    renderFavs();
+    if(API_KEY){ fetchAPI(); document.getElementById('aki').value=API_KEY; }
+    else setAS('err','⏳ Copa começa 11/jun — insira sua chave API ou use o Admin para resultados.');
+    toast('Olá, ' + myName + '! 👋');
+  } else {
+    // Partial state — show login
+    showLoginModal(myName ? 'returning' : 'new');
+  }
 }
 init();
 </script>
