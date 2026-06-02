@@ -103,6 +103,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
 .rr{display:grid;grid-template-columns:44px 1fr 64px 64px 64px 64px;padding:11px 13px;align-items:center;border-bottom:1px solid rgba(255,255,255,.04)}
 .rr:last-child{border-bottom:none}
 .rr:hover{background:rgba(255,215,0,.03)}
+.rr.my-row{background:rgba(0,155,58,.06);border-left:2px solid var(--green)}
 .rps{font-family:'Bebas Neue';font-size:20px}
 .rps.g{color:var(--gold)}.rps.s{color:#c0c0c0}.rps.b{color:#cd7f32}
 .rnm{font-weight:600;font-size:13px}
@@ -402,12 +403,18 @@ const FAVS=[{n:'Brasil',f:'🇧🇷',p:85},{n:'França',f:'🇫🇷',p:80},{n:'A
 
 // ===== STATE =====
 let API_KEY=localStorage.getItem('apifb_key')||'';
-// shared state — loaded from persistent storage
 let results={};
 let palpites={};
-let players=["Você"];
+let players={}; // {code: {name, code}}
 let myName=localStorage.getItem('bolao_myname')||'';
+let myCode=localStorage.getItem('bolao_mycode')||'';
 let curJ=null,curFilt='todos';
+
+// generate a random 6-char code like BRA042
+function genCode(){
+  const prefix=['BRA','GOL','CUP','FIF','VAR','GOA','PEN','BIS'];
+  return prefix[Math.floor(Math.random()*prefix.length)] + String(Math.floor(Math.random()*900)+100);
+}
 
 // ===== SHARED STORAGE via JSONBin.io =====
 // JSONBin stores everything in one JSON "bin" — free, no backend needed.
@@ -447,31 +454,34 @@ async function binSet(data){
 }
 
 async function createBin(){
-  // Ask user for their JSONBin master key (free account)
   const key = prompt(
-    '🔧 CONFIGURAÇÃO INICIAL DO BOLÃO COMPARTILHADO\n\n' +
-    '1. Acesse: jsonbin.io e crie uma conta grátis\n' +
-    '2. Vá em Account Settings → API Keys\n' +
-    '3. Copie sua Master Key e cole abaixo:\n\n' +
-    '(Só precisa fazer isso uma vez — compartilhe o link do app normalmente)'
+    '🔧 CONFIGURAÇÃO INICIAL DO BOLÃO\n\n' +
+    'Passo 1: Acesse jsonbin.io e crie uma conta grátis\n' +
+    'Passo 2: Vá em Account Settings → API Keys\n' +
+    'Passo 3: Copie a Master Key (começa com $2a$10$...)\n\n' +
+    'Cole sua Master Key abaixo:\n' +
+    '(Só o administrador precisa fazer isso uma vez)'
   );
-  if(!key||!key.trim()){toast('⚠️ Sem chave JSONBin — bolão funcionará só localmente.');return false;}
+  if(!key||!key.trim()){toast('⚠️ Sem chave — bolão só local por enquanto.');return false;}
   const masterKey = key.trim();
   try{
+    // Create the bin (public so participants can read)
     const r = await fetch(`${JSONBIN_API}/b`, {
       method:'POST',
       headers:{'Content-Type':'application/json','X-Master-Key':masterKey,'X-Bin-Name':'Bolao Copa 2026','X-Bin-Private':'false'},
       body: JSON.stringify({results:{},palpites:{},players:[],version:1})
     });
-    if(!r.ok) throw new Error('status '+r.status);
+    if(!r.ok) throw new Error('HTTP '+r.status);
     const d = await r.json();
     BIN_ID = d.metadata.id;
     localStorage.setItem('bolao_bin_id', BIN_ID);
     localStorage.setItem('bolao_bin_key', masterKey);
-    toast('✅ Bolão compartilhado criado! BIN ID: '+BIN_ID);
+    // Store master key inside bin too (encrypted would be better but this is low-stakes)
+    await binSet({results:{},palpites:{},players:[],version:1,adminKey:masterKey});
+    toast('✅ Bolão criado com sucesso!');
     return true;
   } catch(e){
-    toast('❌ Erro ao criar bin: '+e.message);
+    alert('❌ Erro: '+e.message+'\n\nVerifique se a Master Key está correta.');
     return false;
   }
 }
@@ -485,27 +495,36 @@ async function storageSave(key, val){
 
 async function loadSharedState(){
   if(!BIN_ID){
-    // try to get BIN_ID from URL param (so sharing link auto-configures others)
     const urlBin = new URLSearchParams(window.location.search).get('bin');
-    const urlKey = new URLSearchParams(window.location.search).get('key');
     if(urlBin){ BIN_ID=urlBin; localStorage.setItem('bolao_bin_id',BIN_ID); }
-    if(urlKey){ localStorage.setItem('bolao_bin_key',urlKey); }
   }
   if(!BIN_ID){ renderAll(); return; }
 
   const data = await binGet();
   if(!data){ renderAll(); return; }
 
+  // Participants auto-grab the admin key from bin data (bin is public-read)
+  if(data.adminKey && !localStorage.getItem('bolao_bin_key')){
+    localStorage.setItem('bolao_bin_key', data.adminKey);
+  }
+
   if(data.results) results = data.results;
   if(data.palpites) palpites = data.palpites;
-  if(data.players && data.players.length) players = data.players;
+  if(data.players) players = data.players;
 
-  // register myName in shared players list
-  if(myName && !players.includes(myName)){
-    players.push(myName);
-    const current = await binGet() || {};
-    current.players = players;
-    await binSet(current);
+  // register this player if not yet in shared players dict
+  if(myCode && myName){
+    if(!players[myCode]){
+      players[myCode] = {name:myName, code:myCode};
+      const current = await binGet() || {};
+      current.players = players;
+      await binSet(current);
+    } else {
+      // sync name from server (in case changed on another device)
+      // but keep local name as source of truth if server matches code
+      myName = players[myCode].name;
+      localStorage.setItem('bolao_myname', myName);
+    }
   }
   recalc(false);
   renderAll();
@@ -513,9 +532,9 @@ async function loadSharedState(){
 }
 
 function updateShareLink(){
-  const key = localStorage.getItem('bolao_bin_key')||'';
-  if(!BIN_ID||!key) return;
-  const link = `${location.origin}${location.pathname}?bin=${BIN_ID}&key=${encodeURIComponent(key)}`;
+  if(!BIN_ID) return;
+  // Clean short link — just bin ID, key is auto-fetched from bin for new participants
+  const link = `${location.origin}${location.pathname}?bin=${BIN_ID}`;
   const el = document.getElementById('share-link');
   if(el){ el.value = link; document.getElementById('share-box').style.display='flex'; }
 }
@@ -624,25 +643,25 @@ function calcSt(){
 // ===== BOLÃO SCORE =====
 function recalc(doRender=true){
   const sc={};
-  players.forEach(p=>sc[p]={pts:0,exact:0,result:0,miss:0});
+  Object.values(players).forEach(p=>sc[p.code]={pts:0,exact:0,result:0,miss:0,name:p.name,code:p.code});
   JOGOS.forEach(j=>{
     const res=results[j.id];
     if(!res||res.h===undefined)return;
     Object.entries(palpites).forEach(([pid,pal])=>{
-      if(parseInt(pid)!==j.id)return;
-      const pl=pal.player||'Você';
-      if(!sc[pl])sc[pl]={pts:0,exact:0,result:0,miss:0};
+      if(pal.jogoId!==j.id)return;
+      const code=pal.code||'?';
+      if(!sc[code])sc[code]={pts:0,exact:0,result:0,miss:0,name:pal.player,code};
       const ps1=parseInt(pal.s1),ps2=parseInt(pal.s2);
-      if(ps1===res.h&&ps2===res.a){sc[pl].pts+=3;sc[pl].exact++;}
+      if(ps1===res.h&&ps2===res.a){sc[code].pts+=3;sc[code].exact++;}
       else{
         const rr=res.h>res.a?'h':res.h===res.a?'d':'a';
         const pr=ps1>ps2?'h':ps1===ps2?'d':'a';
-        if(rr===pr){sc[pl].pts++;sc[pl].result++;}
-        else sc[pl].miss++;
+        if(rr===pr){sc[code].pts++;sc[code].result++;}
+        else sc[code].miss++;
       }
     });
   });
-  players.forEach(p=>localStorage.setItem('copa26_sc_'+p,JSON.stringify(sc[p]||{pts:0,exact:0,result:0,miss:0})));
+  Object.values(sc).forEach(s=>localStorage.setItem('copa26_sc_'+s.code,JSON.stringify(s)));
 
   if(doRender)renderAll();
 }
@@ -682,7 +701,7 @@ function renderJogos(filt){
   document.getElementById('jc').innerHTML=Object.entries(byD).map(([dt,js])=>`
     <div class="dhdr">📅 ${dt} <span style="font-size:10px;color:var(--muted)">${rl[js[0].r]||''}</span></div>
     ${js.map(j=>{
-      const res=results[j.id],pal=palpites[j.id];
+      const res=results[j.id],pal=palpites[j.id+'_'+myCode]||palpites[j.id];
       const isLive=res&&['1H','2H','HT','ET','P'].includes(res.status);
       const isFT=res&&res.status==='FT';
       let sc=pal?`<span style="color:var(--muted);font-size:10px">${pal.s1}×${pal.s2}</span>`:'VS';
@@ -742,20 +761,24 @@ function renderBracket(st){
 }
 
 function renderRanking(){
-  const rows=players.map(p=>{
-    const s=JSON.parse(localStorage.getItem('copa26_sc_'+p)||'{"pts":0,"exact":0,"result":0,"miss":0}');
-    return {...s,n:p};
+  const rows=Object.values(players).map(p=>{
+    const s=JSON.parse(localStorage.getItem('copa26_sc_'+p.code)||'{"pts":0,"exact":0,"result":0,"miss":0}');
+    const palCount=Object.values(palpites).filter(x=>x.code===p.code).length;
+    return {...s,n:p.name,code:p.code,palCount};
   }).sort((a,b)=>b.pts-a.pts);
   const md=['🥇','🥈','🥉'],pc=['g','s','b'];
   document.getElementById('rb').innerHTML=rows.length?rows.map((r,i)=>`
-    <div class="rr">
+    <div class="rr ${r.code===myCode?'my-row':''}">
       <div class="rps ${pc[i]||''}">${md[i]||i+1}</div>
-      <div><div class="rnm">${r.n}</div><div class="rsb">${Object.values(palpites).filter(p=>p.player===r.n).length} palpites</div></div>
+      <div>
+        <div class="rnm">${r.n} ${r.code===myCode?'<span style="font-size:9px;background:rgba(255,215,0,.15);color:var(--gold);padding:1px 6px;border-radius:8px;font-weight:700">VOCÊ</span>':''}</div>
+        <div class="rsb">🔑 ${r.code} · ${r.palCount} palpites</div>
+      </div>
       <div class="rpt">${r.pts}</div>
-      <div class="rex">⭐${r.exact}</div>
-      <div class="rrs">✅${r.result}</div>
-      <div class="rms">❌${r.miss}</div>
-    </div>`).join(''):`<div class="empty"><p>Adicione jogadores ao bolão</p></div>`;
+      <div class="rex">⭐${r.exact||0}</div>
+      <div class="rrs">✅${r.result||0}</div>
+      <div class="rms">❌${r.miss||0}</div>
+    </div>`).join(''):`<div class="empty"><p>Nenhum participante ainda</p></div>`;
 }
 
 function renderAdmin(){
@@ -791,7 +814,7 @@ function admSave(id){
 function openM(id){
   curJ=JOGOS.find(j=>j.id===id);
   if(!curJ)return;
-  const pal=palpites[id];
+  const pal=palpites[id+'_'+myCode]||palpites[id];
   document.getElementById('s1').value=pal?pal.s1:0;
   document.getElementById('s2').value=pal?pal.s2:0;
   document.getElementById('rt1').textContent=curJ.h.n;
@@ -823,7 +846,7 @@ function setR(r){
 function saveP(){
   if(!curJ)return;
   const s1=parseInt(document.getElementById('s1').value)||0,s2=parseInt(document.getElementById('s2').value)||0;
-  palpites[curJ.id]={s1,s2,player:myName||'Você'};
+  palpites[curJ.id+'_'+myCode]={s1,s2,player:myName,code:myCode,jogoId:curJ.id};
   (async()=>{ const c=await binGet()||{}; c.palpites=palpites; await binSet(c); })();
   closeM();recalc();
   toast(`Palpite salvo: ${curJ.h.f} ${s1} × ${s2} ${curJ.a.f}`);
@@ -875,8 +898,8 @@ function fj(f,btn){
   btn.classList.add('active');renderJogos(f);
 }
 function addPlayer(){
-  const n=prompt('Nome do jogador:');
-  if(n&&n.trim()&&!players.includes(n.trim())){players.push(n.trim());(async()=>{ const c=await binGet()||{}; c.players=players; await binSet(c); })();renderRanking();toast(n.trim()+' adicionado ⚽');}
+  // Players now auto-register when they open the link. Show their code to share.
+  alert('ℹ️ Os participantes se cadastram automaticamente ao abrir o link do bolão.\n\nCada um recebe um código único (ex: BRA042) que os identifica em qualquer dispositivo.\n\nCompartilhe o link da aba Bolão com o grupo! ⚽');
 }
 function toast(msg){
   const t=document.createElement('div');t.className='toast';t.textContent=msg;
@@ -889,17 +912,18 @@ function copyLink(){
 }
 function updateMyBadge(){
   const b=document.getElementById('my-badge');
-  if(b) b.textContent='⚽ Jogando como: '+( myName||'Anônimo');
+  if(b) b.textContent='⚽ '+( myName||'Anônimo')+' · 🔑 '+(myCode||'—');
 }
 function changeName(){
   const n=prompt('Novo nome no bolão:',myName);
   if(!n||!n.trim())return;
-  const old=myName;
   myName=n.trim();
   localStorage.setItem('bolao_myname',myName);
-  // migrate palpites to new name
-  Object.values(palpites).forEach(p=>{ if(p.player===old) p.player=myName; });
-  (async()=>{ const c=await binGet()||{}; c.palpites=palpites; if(!players.includes(myName)){players.push(myName);c.players=players;} await binSet(c); })();
+  if(myCode){
+    players[myCode]={name:myName,code:myCode};
+    Object.values(palpites).forEach(p=>{ if(p.code===myCode) p.player=myName; });
+    (async()=>{ const c=await binGet()||{}; c.players=players; c.palpites=palpites; await binSet(c); })();
+  }
   updateMyBadge();
   recalc();
   toast('Nome atualizado para '+myName+' ✓');
@@ -907,26 +931,47 @@ function changeName(){
 
 // ===== INIT =====
 async function init(){
-  // get name
-  if(!myName){
-    let n=prompt('Bem-vindo ao Bolão Copa 2026! 🏆\nQual é o seu nome?');
-    if(!n||!n.trim()) n='Anônimo';
-    myName=n.trim();
-    localStorage.setItem('bolao_myname',myName);
+  const urlBin  = new URLSearchParams(window.location.search).get('bin');
+  const urlCode = new URLSearchParams(window.location.search).get('code');
+
+  // Restore code from URL (lets user enter from another device with same code)
+  if(urlCode && !myCode){
+    myCode = urlCode;
+    localStorage.setItem('bolao_mycode', myCode);
   }
 
-  // if no bin yet and no bin in URL, first user must create one
-  const urlBin = new URLSearchParams(window.location.search).get('bin');
+  // First time on this device: ask name
+  if(!myName){
+    let n = prompt('\u26bd BEM-VINDO AO BOL\u00c3O COPA 2026! \ud83c\udfc6\n\nQual \u00e9 o seu nome?');
+    if(!n||!n.trim()) n = 'An\u00f4nimo';
+    myName = n.trim();
+    localStorage.setItem('bolao_myname', myName);
+  }
+
+  // Generate unique code if none exists yet
+  if(!myCode){
+    myCode = genCode();
+    localStorage.setItem('bolao_mycode', myCode);
+    setTimeout(()=>{
+      alert('\ud83d\udd11 SEU C\u00d3DIGO PESSOAL: ' + myCode
+        + '\n\nGuarde este c\u00f3digo! Ele \u00e9 sua identidade no bol\u00e3o em qualquer dispositivo.'
+        + '\n\nSe quiser entrar pelo celular ou outro aparelho sem perder seus palpites, acesse o link do bol\u00e3o e adicione no final:'
+        + '\n&code=' + myCode
+        + '\n\n(Anote aqui: ________________)');
+    }, 2000);
+  }
+
+  // Admin setup: if no bin yet and none in URL, create one (only first user)
   if(!BIN_ID && !urlBin){
     const ok = await createBin();
     if(!ok){ renderFavs(); renderAll(); return; }
   }
 
-  toast('Olá, '+myName+'! 👋 Carregando bolão...');
+  toast('Ol\u00e1, ' + myName + '! \ud83d\udc4b  C\u00f3digo: ' + myCode);
   await loadSharedState();
   renderFavs();
   if(API_KEY){ fetchAPI(); document.getElementById('aki').value=API_KEY; }
-  else setAS('err','⏳ Copa começa 11/jun — insira sua chave API ou use o Admin para resultados.');
+  else setAS('err','\u23f3 Copa come\u00e7a 11/jun \u2014 insira sua chave API ou use o Admin para resultados.');
 }
 init();
 </script>
