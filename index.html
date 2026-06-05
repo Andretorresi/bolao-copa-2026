@@ -1063,11 +1063,25 @@ function saveP(){
 }
 
 // ===== IA =====
+// Cloudflare Worker proxy URL — created to bypass CORS restriction
+// Worker source is provided separately to deploy at workers.dev
+const CF_WORKER_URL = 'https://dark-sound-741b.atorresi.workers.dev';
+
 async function callClaude(prompt){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-  const d=await r.json();
-  return d.content.find(b=>b.type==='text')?.text||'';
+  // Try via Cloudflare Worker proxy first
+  try{
+    const r = await fetch(CF_WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt, max_tokens:1000})
+    });
+    if(!r.ok) throw new Error('proxy status '+r.status);
+    const d = await r.json();
+    return d.text || d.content || '';
+  } catch(e){
+    // Fallback message if proxy not configured yet
+    throw new Error('Configure o proxy Cloudflare Worker para usar a IA. Veja as instruções no README.');
+  }
 }
 async function getIA(){
   const btn=document.getElementById('iabtn'),out=document.getElementById('iaout');
