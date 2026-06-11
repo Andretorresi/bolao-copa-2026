@@ -291,7 +291,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px">
       <select id="gsel" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;outline:none">
         <option value="C">Grupo C — Brasil, Marrocos, Escócia, Haiti</option>
-        <option value="A">Grupo A — México, África do Sul, Coreia do Sul, Dinamarca</option>
+        <option value="A">Grupo A — México, África do Sul, Coreia do Sul, Rep. Tcheca</option>
         <option value="E">Grupo E — Alemanha, Curaçao, Costa do Marfim, Equador</option>
         <option value="H">Grupo H — Espanha, Uruguai, Arábia Saudita, Cabo Verde</option>
         <option value="I">Grupo I — França, Noruega, Senegal, Iraque</option>
@@ -352,7 +352,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
 <script>
 // ===== DATA =====
 const GD={
-  A:{t:[{n:'México',f:'🇲🇽',r:16},{n:'África do Sul',f:'🇿🇦',r:58},{n:'Coreia do Sul',f:'🇰🇷',r:22},{n:'Dinamarca',f:'🇩🇰',r:20}]},
+  A:{t:[{n:'México',f:'🇲🇽',r:16},{n:'África do Sul',f:'🇿🇦',r:58},{n:'Coreia do Sul',f:'🇰🇷',r:22},{n:'Rep. Tcheca',f:'🇨🇿',r:36}]},
   B:{t:[{n:'Canadá',f:'🇨🇦',r:47},{n:'Catar',f:'🇶🇦',r:38},{n:'Suíça',f:'🇨🇭',r:19},{n:'Bósnia',f:'🇧🇦',r:68}]},
   C:{t:[{n:'Brasil',f:'🇧🇷',r:5,br:1},{n:'Marrocos',f:'🇲🇦',r:13},{n:'Haiti',f:'🇭🇹',r:85},{n:'Escócia',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',r:37}]},
   D:{t:[{n:'Estados Unidos',f:'🇺🇸',r:11},{n:'Paraguai',f:'🇵🇾',r:61},{n:'Austrália',f:'🇦🇺',r:24},{n:'Turquia',f:'🇹🇷',r:29}]},
@@ -368,7 +368,7 @@ const GD={
 
 const JOGOS=[
   {id:101,r:1,date:'11/06',time:'16h00',g:'A',h:{n:'México',f:'🇲🇽'},a:{n:'África do Sul',f:'🇿🇦'},loc:'Cidade do México'},
-  {id:102,r:1,date:'11/06',time:'23h00',g:'A',h:{n:'Coreia do Sul',f:'🇰🇷'},a:{n:'Dinamarca',f:'🇩🇰'},loc:'Guadalajara'},
+  {id:102,r:1,date:'11/06',time:'23h00',g:'A',h:{n:'Coreia do Sul',f:'🇰🇷'},a:{n:'Rep. Tcheca',f:'🇨🇿'},loc:'Guadalajara'},
   {id:103,r:1,date:'12/06',time:'16h00',g:'B',h:{n:'Canadá',f:'🇨🇦'},a:{n:'Bósnia',f:'🇧🇦'},loc:'Toronto'},
   {id:104,r:1,date:'12/06',time:'22h00',g:'D',h:{n:'Estados Unidos',f:'🇺🇸'},a:{n:'Paraguai',f:'🇵🇾'},loc:'Los Angeles'},
   {id:105,r:1,date:'13/06',time:'01h00',g:'D',h:{n:'Austrália',f:'🇦🇺'},a:{n:'Turquia',f:'🇹🇷'},loc:'Vancouver'},
@@ -391,7 +391,7 @@ const JOGOS=[
   {id:122,r:1,date:'19/06',time:'19h00',g:'L',h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'Panamá',f:'🇵🇦'},loc:'Nova York/NJ'},
   {id:123,r:1,date:'19/06',time:'22h00',g:'L',h:{n:'Croácia',f:'🇭🇷'},a:{n:'Gana',f:'🇬🇭'},loc:'Filadélfia'},
   {id:201,r:2,date:'17/06',time:'—',g:'A',h:{n:'México',f:'🇲🇽'},a:{n:'Coreia do Sul',f:'🇰🇷'},loc:'Guadalajara'},
-  {id:202,r:2,date:'17/06',time:'—',g:'A',h:{n:'África do Sul',f:'🇿🇦'},a:{n:'Dinamarca',f:'🇩🇰'},loc:'Cidade do México'},
+  {id:202,r:2,date:'17/06',time:'—',g:'A',h:{n:'África do Sul',f:'🇿🇦'},a:{n:'Rep. Tcheca',f:'🇨🇿'},loc:'Cidade do México'},
   {id:203,r:2,date:'19/06',time:'—',g:'C',h:{n:'Brasil',f:'🇧🇷'},a:{n:'Haiti',f:'🇭🇹'},loc:'A confirmar',br:1},
   {id:204,r:2,date:'19/06',time:'—',g:'C',h:{n:'Marrocos',f:'🇲🇦'},a:{n:'Escócia',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},loc:'A confirmar'},
   {id:205,r:2,date:'20/06',time:'—',g:'E',h:{n:'Alemanha',f:'🇩🇪'},a:{n:'Costa do Marfim',f:'🇨🇮'},loc:'A confirmar'},
@@ -403,7 +403,7 @@ const JOGOS=[
   {id:211,r:2,date:'23/06',time:'—',g:'L',h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'Croácia',f:'🇭🇷'},loc:'A confirmar'},
   {id:301,r:3,date:'24/06',time:'—',g:'C',h:{n:'Brasil',f:'🇧🇷'},a:{n:'Escócia',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},loc:'A confirmar',br:1},
   {id:302,r:3,date:'24/06',time:'—',g:'C',h:{n:'Marrocos',f:'🇲🇦'},a:{n:'Haiti',f:'🇭🇹'},loc:'A confirmar'},
-  {id:303,r:3,date:'25/06',time:'—',g:'A',h:{n:'México',f:'🇲🇽'},a:{n:'Dinamarca',f:'🇩🇰'},loc:'A confirmar'},
+  {id:303,r:3,date:'25/06',time:'—',g:'A',h:{n:'México',f:'🇲🇽'},a:{n:'Rep. Tcheca',f:'🇨🇿'},loc:'A confirmar'},
   {id:304,r:3,date:'25/06',time:'—',g:'H',h:{n:'Espanha',f:'🇪🇸'},a:{n:'Uruguai',f:'🇺🇾'},loc:'A confirmar'},
   {id:305,r:3,date:'26/06',time:'—',g:'J',h:{n:'Argentina',f:'🇦🇷'},a:{n:'Áustria',f:'🇦🇹'},loc:'A confirmar'},
   {id:306,r:3,date:'27/06',time:'—',g:'K',h:{n:'Portugal',f:'🇵🇹'},a:{n:'Colômbia',f:'🇨🇴'},loc:'A confirmar'},
@@ -1104,7 +1104,7 @@ async function getIA(){
 }
 async function getGIA(){
   const g=document.getElementById('gsel').value,out=document.getElementById('giaout');
-  const gm={C:'Brasil🇧🇷,Marrocos🇲🇦,Haiti🇭🇹,Escócia🏴󠁧󠁢󠁳󠁣󠁴󠁿',A:'México🇲🇽,África do Sul🇿🇦,Coreia do Sul🇰🇷,Dinamarca🇩🇰',
+  const gm={C:'Brasil🇧🇷,Marrocos🇲🇦,Haiti🇭🇹,Escócia🏴󠁧󠁢󠁳󠁣󠁴󠁿',A:'México🇲🇽,África do Sul🇿🇦,Coreia do Sul🇰🇷,Rep. Tcheca🇨🇿',
     E:'Alemanha🇩🇪,Curaçao🇨🇼,Costa do Marfim🇨🇮,Equador🇪🇨',H:'Espanha🇪🇸,Uruguai🇺🇾,Arábia Saudita🇸🇦,Cabo Verde🇨🇻',
     I:'França🇫🇷,Noruega🇳🇴,Senegal🇸🇳,Iraque🇮🇶',J:'Argentina🇦🇷,Argélia🇩🇿,Áustria🇦🇹,Jordânia🇯🇴',
     K:'Portugal🇵🇹,Colômbia🇨🇴,Uzbequistão🇺🇿,RD Congo🇨🇩',L:'Inglaterra🏴󠁧󠁢󠁥󠁮󠁧󠁿,Croácia🇭🇷,Gana🇬🇭,Panamá🇵🇦'};
