@@ -716,6 +716,7 @@ async function loadSharedState(){
 
   if(data.results) results = data.results;
   if(data.palpites) palpites = data.palpites;
+  if(data.scores){ Object.entries(data.scores).forEach(([k,s])=>localStorage.setItem('copa26_sc_'+k,JSON.stringify(s))); }
 
   // Load players — keyed by username (lowercase)
   if(data.players){
@@ -1032,8 +1033,12 @@ function admSave(id){
   const a=parseInt(document.getElementById('aa'+id).value);
   if(isNaN(h)||isNaN(a))return toast('Preencha os dois placares');
   results[id]={h,a,status:'FT'};
-  (async()=>{ const c=await binGet()||{}; c.results=results; await binSet(c); })();
-  recalc();toast('Resultado salvo ✓');
+  // Recalc scores and save everything to JSONBin so all users see updated ranking
+  recalc(false);
+  const sc={};
+  Object.values(players).forEach(p=>{ if(p&&p.name){ const k=p.username||p.code; const s=localStorage.getItem('copa26_sc_'+k); if(s)sc[k]=JSON.parse(s); }});
+  (async()=>{ const c=await binGet()||{}; c.results=results; c.scores=sc; await binSet(c); recalc(); })();
+  toast('Resultado salvo e pontuacao atualizada ✓');
 }
 
 // ===== MODAL =====
