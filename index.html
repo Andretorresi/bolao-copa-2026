@@ -716,7 +716,12 @@ async function loadSharedState(){
 
   if(data.results) results = data.results;
   if(data.palpites) palpites = data.palpites;
-  if(data.scores){ Object.entries(data.scores).forEach(([k,s])=>localStorage.setItem('copa26_sc_'+k,JSON.stringify(s))); }
+  if(data.scores && Object.keys(data.scores).length>0){
+    Object.entries(data.scores).forEach(([k,s])=>{
+      const storeKey=(s&&s.username)||k;
+      localStorage.setItem('copa26_sc_'+storeKey,JSON.stringify(s));
+    });
+  }
 
   // Load players — keyed by username (lowercase)
   if(data.players){
@@ -774,33 +779,72 @@ function setAS(st,msg){
 }
 
 async function fetchAPI(){
-  if(!API_KEY){setAS('err','Sem chave API. Insira acima para resultados automáticos.');return;}
-  document.getElementById('aki').value=API_KEY;
-  setAS('loading','Buscando dados na API-Football...');
-  try{
-    const r=await fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026`,{headers:{'x-apisports-key':API_KEY}});
-    if(r.status===403||r.status===401) throw new Error('auth');
-    if(r.status===429) throw new Error('rate');
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const d=await r.json();
-    if(d.errors && Object.keys(d.errors).length){
-      const em=JSON.stringify(d.errors);
-      if(em.includes('token')||em.includes('requests')) throw new Error('auth');
-      throw new Error(em);
+  // openfootball World Cup 2026 - free, no API key required
+  const OPENFOOTBALL_URL = 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json';
+  
+  // Map openfootball team names to our JOGOS team names
+  const TEAM_MAP = {
+    'Mexico':'Mexico','South Africa':'Africa do Sul','South Korea':'Coreia do Sul',
+    'Czech Republic':'Rep. Tcheca','Canada':'Canada','Bosnia & Herzegovina':'Bosnia',
+    'Qatar':'Catar','Switzerland':'Suica','Brazil':'Brasil','Morocco':'Marrocos',
+    'Haiti':'Haiti','Scotland':'Escocia','USA':'EUA','Paraguay':'Paraguai',
+    'Australia':'Australia','Germany':'Alemanha','Curacao':'Curacao',
+    'Ivory Coast':'Costa do Marfim','Ecuador':'Equador','Netherlands':'Holanda',
+    'Japan':'Japao','Tunisia':'Tunisia','Belgium':'Belgica','Egypt':'Egito',
+    'Iran':'Ira','New Zealand':'Nova Zelandia','Spain':'Espanha',
+    'Saudi Arabia':'Arabia Saudita','Uruguay':'Uruguai','France':'Franca',
+    'Senegal':'Senegal','Iraq':'Iraque','Norway':'Noruega','Argentina':'Argentina',
+    'Algeria':'Algeria','Austria':'Austria','Jordan':'Jordania','Portugal':'Portugal',
+    'DR Congo':'Congo','Uzbekistan':'Uzbequistao','Colombia':'Colombia',
+    'England':'Inglaterra','Croatia':'Croacia','Ghana':'Gana','Panama':'Panama',
+    'Cape Verde':'Cabo Verde','Curaçao':'Curacao'
+  };
+
+  try {
+    const resp = await fetch(OPENFOOTBALL_URL);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data = await resp.json();
+    const matches = data.matches || [];
+    
+    let updated = 0;
+    matches.forEach(m => {
+      if(!m.score || !m.score.ft) return; // no result yet
+      const ft = m.score.ft; // [home, away]
+      const h = ft[0], a = ft[1];
+      
+      // Find matching jogo by team names
+      const t1 = TEAM_MAP[m.team1] || m.team1;
+      const t2 = TEAM_MAP[m.team2] || m.team2;
+      
+      const jogo = JOGOS.find(j => {
+        const jh = (j.h.n||'').toLowerCase();
+        const ja = (j.a.n||'').toLowerCase();
+        const m1 = t1.toLowerCase();
+        const m2 = t2.toLowerCase();
+        return (jh.includes(m1.slice(0,4)) || m1.includes(jh.slice(0,4))) &&
+               (ja.includes(m2.slice(0,4)) || m2.includes(ja.slice(0,4)));
+      });
+      
+      if(jogo && results[jogo.id]===undefined){
+        results[jogo.id] = {h, a, status:'FT'};
+        updated++;
+      }
+    });
+    
+    if(updated > 0){
+      console.log('openfootball: '+updated+' resultados importados');
+      const sc = recalc(false);
+      const c = await binGet()||{};
+      c.results = results;
+      c.scores = sc||{};
+      await binSet(c);
+      recalc(true);
+      toast(updated+' resultado(s) atualizado(s) automaticamente!');
     }
-    if(!d.response||!d.response.length){
-      setAS('err','⏳ Copa começa em 11/jun — API ainda sem resultados. Use a aba Admin para inserir palpites!');
-      return;
-    }
-    processFixtures(d.response);
-    setAS('ok','API-Football OK — '+d.response.length+' jogos carregados');
-    renderAll();
-    setTimeout(fetchAPI,3*60*1000);
-  }catch(e){
-    const m=e.message||'';
-    if(m==='auth') setAS('err','🔑 Chave inválida ou Copa 2026 fora do plano free. Use o Admin para resultados!');
-    else if(m==='rate') setAS('err','⏳ Limite de 100 req/dia atingido. Reset à meia-noite UTC.');
-    else setAS('err','Erro API ('+m+') — use o Admin para inserir resultados manualmente.');
+    return updated;
+  } catch(e) {
+    console.log('openfootball API error:', e.message);
+    return 0;
   }
 }
 
@@ -859,29 +903,38 @@ function calcSt(){
 
 // ===== BOLÃO SCORE =====
 function adminRecalc(){ if(!isAdmin()){ toast('⛔ Acesso restrito.'); return; } recalc(); }
+function playerKey(p){ return p.username||p.code||''; }
+function palpiteKey(pal){ return pal.username||pal.code||''; }
+
 function recalc(doRender=true){
   const sc={};
-  Object.values(players).forEach(p=>{ if(p&&p.name) sc[p.username||p.code]={pts:0,exact:0,result:0,miss:0,name:p.name,username:p.username||'',code:p.code||''}; });
+  Object.values(players).forEach(p=>{
+    if(p&&p.name){
+      const key=playerKey(p);
+      if(key) sc[key]={pts:0,exact:0,result:0,miss:0,name:p.name,username:p.username||'',code:p.code||''};
+    }
+  });
   JOGOS.forEach(j=>{
     const res=results[j.id];
     if(!res||res.h===undefined)return;
     Object.entries(palpites).forEach(([pid,pal])=>{
       if(pal.jogoId!==j.id)return;
-      const code=pal.code||'?';
-      if(!sc[code])sc[code]={pts:0,exact:0,result:0,miss:0,name:pal.player,code};
+      const key=palpiteKey(pal);
+      if(!key)return;
+      if(!sc[key])sc[key]={pts:0,exact:0,result:0,miss:0,name:pal.player||'',username:pal.username||'',code:pal.code||''};
       const ps1=parseInt(pal.s1),ps2=parseInt(pal.s2);
-      if(ps1===res.h&&ps2===res.a){sc[code].pts+=3;sc[code].exact++;}
+      if(ps1===res.h&&ps2===res.a){sc[key].pts+=3;sc[key].exact++;}
       else{
         const rr=res.h>res.a?'h':res.h===res.a?'d':'a';
         const pr=ps1>ps2?'h':ps1===ps2?'d':'a';
-        if(rr===pr){sc[code].pts++;sc[code].result++;}
-        else sc[code].miss++;
+        if(rr===pr){sc[key].pts++;sc[key].result++;}
+        else sc[key].miss++;
       }
     });
   });
-  Object.values(sc).forEach(s=>localStorage.setItem('copa26_sc_'+s.code,JSON.stringify(s)));
-
+  Object.values(sc).forEach(s=>localStorage.setItem('copa26_sc_'+(s.username||s.code),JSON.stringify(s)));
   if(doRender)renderAll();
+  return sc;
 }
 
 // ===== RENDER =====
@@ -1028,30 +1081,19 @@ function renderFavs(){
 
 // ===== ADMIN SAVE =====
 function admSave(id){
-  if(!isAdmin()){ toast('⛔ Acesso restrito.'); return; }
+  if(!isAdmin()){ toast('Acesso restrito.'); return; }
   const h=parseInt(document.getElementById('ah'+id).value);
   const a=parseInt(document.getElementById('aa'+id).value);
   if(isNaN(h)||isNaN(a))return toast('Preencha os dois placares');
   results[id]={h,a,status:'FT'};
-  // Recalc scores locally first
-  recalc(false);
-  // Collect ALL scores from localStorage (recalc just wrote them there)
-  const sc={};
-  // Get all keys that match copa26_sc_
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    if(k&&k.startsWith('copa26_sc_')){
-      try{ sc[k.replace('copa26_sc_','')]=JSON.parse(localStorage.getItem(k)); }catch(e){}
-    }
-  }
-  // Save results + scores to JSONBin so ALL users get updated ranking
+  const sc=recalc(false);
   (async()=>{
     const c=await binGet()||{};
     c.results=results;
-    c.scores=sc;
+    c.scores=sc||{};
     await binSet(c);
-    recalc();
-    toast('Resultado salvo! Ranking atualizado para todos ✓');
+    recalc(true);
+    toast('Resultado salvo! Ranking atualizado para todos!');
   })();
 }
 
