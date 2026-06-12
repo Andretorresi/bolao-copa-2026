@@ -986,7 +986,7 @@ function renderJogos(filt){
           <div class="jt aw"><span class="jfl">${j.a.f}</span><span class="jname">${j.a.n}</span></div>
         </div>
         <span class="jloc">📍${j.loc}</span>
-        <button class="pb ${pal?'done':''}" onclick="openM(${j.id})">${pal?'✏️ EDITAR':'🎯 PALPITAR'}</button>
+        <button class="pb ${isGameLocked(j)?'done':''}${pal&&!isGameLocked(j)?' done':''}" onclick="openM(${j.id})">${isGameLocked(j)?(pal?'🔒 '+pal.s1+' x '+pal.s2:'🔒 ENCERRADO'):(pal?'✏️ EDITAR':'🎯 PALPITAR')}</button>
       </div>`;
     }).join('')}
   `).join('')||`<div class="empty"><p>Nenhum jogo encontrado</p></div>`;
@@ -1098,9 +1098,29 @@ function admSave(id){
 }
 
 // ===== MODAL =====
+
+function isGameLocked(jogo){
+  // Returns true if game has already started or finished
+  if(results[jogo.id]) return true; // already has result
+  if(!jogo.date || !jogo.time) return false;
+  try{
+    const parts = jogo.date.split('/');
+    const timeParts = jogo.time.replace('h',':').split(':');
+    const day = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    const hour = parseInt(timeParts[0]);
+    const min = parseInt(timeParts[1])||0;
+    const year = 2026;
+    // Game time in UTC-3 (Brasilia), convert to UTC
+    const gameUTC = new Date(Date.UTC(year, month-1, day, hour+3, min));
+    return new Date() >= gameUTC;
+  }catch(e){ return false; }
+}
+
 function openM(id){
   curJ=JOGOS.find(j=>j.id===id);
   if(!curJ)return;
+  const locked=isGameLocked(curJ);
   const pal=palpites[id+'_'+(myUsername||myCode)]||palpites[id+'_'+myCode]||palpites[id];
   document.getElementById('s1').value=pal?pal.s1:0;
   document.getElementById('s2').value=pal?pal.s2:0;
@@ -1111,6 +1131,27 @@ function openM(id){
     <div class="mdv">VS</div>
     <div class="mte"><div class="mf">${curJ.a.f}</div><div class="mn">${curJ.a.n}</div></div>`;
   document.getElementById('mia').innerHTML=`<button class="iagb" onclick="getMIA()">✨ Previsão IA</button>`;
+  // Show lock warning if game started
+  const lockWarn = document.getElementById('lock-warn');
+  if(lockWarn) lockWarn.remove();
+  if(locked){
+    const warn = document.createElement('div');
+    warn.id = 'lock-warn';
+    warn.style.cssText = 'background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#ff6b6b;text-align:center;font-weight:600';
+    warn.textContent = '🔒 Jogo já iniciado — palpites encerrados';
+    document.getElementById('mdm').parentNode.insertBefore(warn, document.getElementById('mdm'));
+  }
+  // Disable/enable inputs and save button
+  ['s1','s2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.disabled=locked;
+  });
+  const saveBtn=document.querySelector('#moo .sbtn');
+  if(saveBtn){
+    saveBtn.disabled=locked;
+    saveBtn.style.opacity=locked?'0.4':'1';
+    saveBtn.style.cursor=locked?'not-allowed':'pointer';
+  }
   syncR();
   document.getElementById('moo').classList.add('open');
 }
@@ -1132,11 +1173,15 @@ function setR(r){
 }
 function saveP(){
   if(!curJ)return;
+  if(isGameLocked(curJ)){
+    toast('🔒 Jogo ja iniciado! Palpite nao permitido.');
+    return;
+  }
   const s1=parseInt(document.getElementById('s1').value)||0,s2=parseInt(document.getElementById('s2').value)||0;
   palpites[curJ.id+'_'+(myUsername||myCode)]={s1,s2,player:myName,username:myUsername,code:myCode,jogoId:curJ.id};
   (async()=>{ const c=await binGet()||{}; c.palpites=palpites; await binSet(c); })();
   closeM();recalc();
-  toast(`Palpite salvo: ${curJ.h.f} ${s1} × ${s2} ${curJ.a.f}`);
+  toast('Palpite salvo: '+curJ.h.f+' '+s1+' x '+s2+' '+curJ.a.f);
 }
 
 // ===== IA =====
