@@ -18,14 +18,14 @@ header{background:linear-gradient(135deg,#08081a,#101028 60%,#08081a);border-bot
 nav{display:flex;gap:4px;flex-wrap:wrap}
 .nb{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 13px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;letter-spacing:1px;transition:all .2s;font-family:'DM Sans',sans-serif}
 .nb:hover,.nb.active{background:rgba(255,215,0,.1);border-color:var(--gold);color:var(--gold)}
-#api-bar{background:var(--dark2);border-bottom:1px solid var(--border);padding:7px 20px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);flex-wrap:wrap}
-.api-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.api-dot.ok{background:var(--win)}.api-dot.err{background:var(--loss)}.api-dot.loading{background:var(--gold);animation:pulse 1s infinite}
+
+
+
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-#akf{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
+
 #aki{background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:5px;font-size:11px;width:190px;font-family:'DM Sans',sans-serif;outline:none}
 #aki:focus{border-color:var(--gold)}
-.asb{background:rgba(255,215,0,.1);border:1px solid var(--gold);color:var(--gold);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:600}
+
 main{max-width:1100px;margin:0 auto;padding:20px 14px}
 .sec{display:none}.sec.active{display:block}
 .hero{background:linear-gradient(135deg,var(--green),#006629 40%,var(--blue));border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);flex-wrap:wrap;gap:12px}
@@ -170,17 +170,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
     <button class="nb" id="admin-nav-btn" onclick="show('admin',this)" style="display:none">⚙️ ADMIN</button>
   </nav>
 </header>
-
-<div id="api-bar">
-  <div class="api-dot loading" id="adot"></div>
-  <span id="astxt">Aguardando chave API-Football...</span>
-  <span id="alast" style="font-size:10px;color:var(--muted)"></span>
-  <div id="akf">
-    <input type="text" id="aki" placeholder="Chave API-Football (gratuita)" />
-    <button class="asb" onclick="saveKey()">SALVAR</button>
-    <a href="https://dashboard.api-football.com/register" target="_blank" style="font-size:10px;color:var(--gold)">Criar conta grátis →</a>
-  </div>
-</div>
 
 <main>
 
@@ -379,39 +368,69 @@ const JOGOS=[
   {id:110,r:1,date:'14/06',time:'17h00',g:'F',h:{n:'Holanda',f:'🇳🇱'},a:{n:'Japão',f:'🇯🇵'},loc:'Dallas'},
   {id:111,r:1,date:'14/06',time:'20h00',g:'E',h:{n:'Costa do Marfim',f:'🇨🇮'},a:{n:'Equador',f:'🇪🇨'},loc:'Filadélfia'},
   {id:124,r:1,date:'14/06',time:'23h00',g:'F',h:{n:'Suécia',f:'🇸🇪'},a:{n:'Tunísia',f:'🇹🇳'},loc:'Monterrey'},
+  {id:114,r:1,date:'15/06',time:'13h00',g:'H',h:{n:'Espanha',f:'🇪🇸'},a:{n:'Cabo Verde',f:'🇨🇻'},loc:'Atlanta'},
   {id:112,r:1,date:'15/06',time:'16h00',g:'G',h:{n:'Bélgica',f:'🇧🇪'},a:{n:'Egito',f:'🇪🇬'},loc:'Seattle'},
+  {id:116,r:1,date:'15/06',time:'19h00',g:'H',h:{n:'Arábia Saudita',f:'🇸🇦'},a:{n:'Uruguai',f:'🇺🇾'},loc:'Miami'},
   {id:113,r:1,date:'15/06',time:'22h00',g:'G',h:{n:'Irã',f:'🇮🇷'},a:{n:'Nova Zelândia',f:'🇳🇿'},loc:'Los Angeles'},
-  {id:114,r:1,date:'16/06',time:'16h00',g:'H',h:{n:'Espanha',f:'🇪🇸'},a:{n:'Cabo Verde',f:'🇨🇻'},loc:'Atlanta'},
-  {id:115,r:1,date:'16/06',time:'19h00',g:'I',h:{n:'França',f:'🇫🇷'},a:{n:'Senegal',f:'🇸🇳'},loc:'Boston'},
-  {id:116,r:1,date:'16/06',time:'22h00',g:'H',h:{n:'Arábia Saudita',f:'🇸🇦'},a:{n:'Uruguai',f:'🇺🇾'},loc:'Houston'},
-  {id:117,r:1,date:'16/06',time:'14h00',g:'J',h:{n:'Argentina',f:'🇦🇷'},a:{n:'Argélia',f:'🇩🇿'},loc:'Kansas City'},
+  {id:115,r:1,date:'16/06',time:'16h00',g:'I',h:{n:'França',f:'🇫🇷'},a:{n:'Senegal',f:'🇸🇳'},loc:'Nova York/NJ'},
+  {id:121,r:1,date:'16/06',time:'19h00',g:'I',h:{n:'Iraque',f:'🇮🇶'},a:{n:'Noruega',f:'🇳🇴'},loc:'Boston'},
+  {id:117,r:1,date:'16/06',time:'22h00',g:'J',h:{n:'Argentina',f:'🇦🇷'},a:{n:'Argélia',f:'🇩🇿'},loc:'Kansas City'},
   {id:118,r:1,date:'17/06',time:'01h00',g:'J',h:{n:'Áustria',f:'🇦🇹'},a:{n:'Jordânia',f:'🇯🇴'},loc:'San Francisco'},
-  {id:119,r:1,date:'18/06',time:'19h00',g:'K',h:{n:'Portugal',f:'🇵🇹'},a:{n:'RD Congo',f:'🇨🇩'},loc:'Atlanta'},
-  {id:120,r:1,date:'18/06',time:'22h00',g:'K',h:{n:'Colômbia',f:'🇨🇴'},a:{n:'Uzbequistão',f:'🇺🇿'},loc:'Miami'},
-  {id:121,r:1,date:'19/06',time:'16h00',g:'I',h:{n:'Noruega',f:'🇳🇴'},a:{n:'Iraque',f:'🇮🇶'},loc:'Toronto'},
+  {id:119,r:1,date:'17/06',time:'14h00',g:'K',h:{n:'Portugal',f:'🇵🇹'},a:{n:'RD Congo',f:'🇨🇩'},loc:'Houston'},
   {id:122,r:1,date:'17/06',time:'17h00',g:'L',h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'Croácia',f:'🇭🇷'},loc:'Dallas'},
   {id:123,r:1,date:'17/06',time:'20h00',g:'L',h:{n:'Gana',f:'🇬🇭'},a:{n:'Panamá',f:'🇵🇦'},loc:'Toronto'},
   {id:125,r:1,date:'17/06',time:'23h00',g:'K',h:{n:'Uzbequistão',f:'🇺🇿'},a:{n:'Colômbia',f:'🇨🇴'},loc:'Cidade do México'},
-  {id:126,r:1,date:'19/06',time:'19h00',g:'L',h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'Panamá',f:'🇵🇦'},loc:'Nova York/NJ'},
-  {id:127,r:1,date:'19/06',time:'22h00',g:'L',h:{n:'Croácia',f:'🇭🇷'},a:{n:'Gana',f:'🇬🇭'},loc:'Filadélfia'},
-  {id:201,r:2,date:'18/06',time:'22h00',g:'A',h:{n:'México',f:'🇲🇽'},a:{n:'Coreia do Sul',f:'🇰🇷'},loc:'Guadalajara'},
-  {id:202,r:2,date:'18/06',time:'13h00',g:'A',h:{n:'Rep. Tcheca',f:'🇨🇿'},a:{n:'África do Sul',f:'🇿🇦'},loc:'Atlanta'},
-  {id:203,r:2,date:'19/06',time:'22h00',g:'C',h:{n:'Brasil',f:'🇧🇷'},a:{n:'Haiti',f:'🇭🇹'},loc:'Filadélfia',br:1},
+  {id:201,r:2,date:'18/06',time:'13h00',g:'A',h:{n:'Rep. Tcheca',f:'🇨🇿'},a:{n:'África do Sul',f:'🇿🇦'},loc:'Atlanta'},
+  {id:212,r:2,date:'18/06',time:'16h00',g:'B',h:{n:'Suíça',f:'🇨🇭'},a:{n:'Bósnia',f:'🇧🇦'},loc:'Los Angeles'},
+  {id:213,r:2,date:'18/06',time:'19h00',g:'B',h:{n:'Canadá',f:'🇨🇦'},a:{n:'Catar',f:'🇶🇦'},loc:'Vancouver'},
+  {id:202,r:2,date:'18/06',time:'22h00',g:'A',h:{n:'México',f:'🇲🇽'},a:{n:'Coreia do Sul',f:'🇰🇷'},loc:'Guadalajara'},
+  {id:214,r:2,date:'19/06',time:'01h00',g:'D',h:{n:'Turquia',f:'🇹🇷'},a:{n:'Paraguai',f:'🇵🇾'},loc:'San Francisco'},
+  {id:215,r:2,date:'19/06',time:'16h00',g:'D',h:{n:'Estados Unidos',f:'🇺🇸'},a:{n:'Austrália',f:'🇦🇺'},loc:'Seattle'},
   {id:204,r:2,date:'19/06',time:'19h00',g:'C',h:{n:'Escócia',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},a:{n:'Marrocos',f:'🇲🇦'},loc:'Boston'},
-  {id:205,r:2,date:'20/06',time:'17h00',g:'E',h:{n:'Alemanha',f:'🇩🇪'},a:{n:'Costa do Marfim',f:'🇨🇮'},loc:'Toronto'},
-  {id:206,r:2,date:'21/06',time:'13h00',g:'H',h:{n:'Espanha',f:'🇪🇸'},a:{n:'Arábia Saudita',f:'🇸🇦'},loc:'Atlanta'},
-  {id:207,r:2,date:'22/06',time:'14h00',g:'J',h:{n:'Argentina',f:'🇦🇷'},a:{n:'Áustria',f:'🇦🇹'},loc:'Dallas'},
+  {id:203,r:2,date:'19/06',time:'21h30',g:'C',h:{n:'Brasil',f:'🇧🇷'},a:{n:'Haiti',f:'🇭🇹'},loc:'Filadélfia',br:1},
   {id:208,r:2,date:'20/06',time:'14h00',g:'F',h:{n:'Holanda',f:'🇳🇱'},a:{n:'Suécia',f:'🇸🇪'},loc:'Houston'},
-  {id:209,r:2,date:'22/06',time:'18h00',g:'I',h:{n:'França',f:'🇫🇷'},a:{n:'Noruega',f:'🇳🇴'},loc:'Filadélfia'},
+  {id:205,r:2,date:'20/06',time:'17h00',g:'E',h:{n:'Alemanha',f:'🇩🇪'},a:{n:'Costa do Marfim',f:'🇨🇮'},loc:'Toronto'},
+  {id:216,r:2,date:'20/06',time:'21h00',g:'E',h:{n:'Equador',f:'🇪🇨'},a:{n:'Curaçao',f:'🇨🇼'},loc:'Kansas City'},
+  {id:217,r:2,date:'21/06',time:'01h00',g:'F',h:{n:'Tunísia',f:'🇹🇳'},a:{n:'Japão',f:'🇯🇵'},loc:'Monterrey'},
+  {id:206,r:2,date:'21/06',time:'13h00',g:'H',h:{n:'Espanha',f:'🇪🇸'},a:{n:'Arábia Saudita',f:'🇸🇦'},loc:'Atlanta'},
+  {id:218,r:2,date:'21/06',time:'16h00',g:'G',h:{n:'Bélgica',f:'🇧🇪'},a:{n:'Irã',f:'🇮🇷'},loc:'Los Angeles'},
+  {id:219,r:2,date:'21/06',time:'19h00',g:'H',h:{n:'Uruguai',f:'🇺🇾'},a:{n:'Cabo Verde',f:'🇨🇻'},loc:'Miami'},
+  {id:220,r:2,date:'21/06',time:'22h00',g:'G',h:{n:'Nova Zelândia',f:'🇳🇿'},a:{n:'Egito',f:'🇪🇬'},loc:'Vancouver'},
+  {id:207,r:2,date:'22/06',time:'14h00',g:'J',h:{n:'Argentina',f:'🇦🇷'},a:{n:'Áustria',f:'🇦🇹'},loc:'Dallas'},
+  {id:209,r:2,date:'22/06',time:'18h00',g:'I',h:{n:'França',f:'🇫🇷'},a:{n:'Iraque',f:'🇮🇶'},loc:'Filadélfia'},
+  {id:221,r:2,date:'22/06',time:'21h00',g:'I',h:{n:'Noruega',f:'🇳🇴'},a:{n:'Senegal',f:'🇸🇳'},loc:'Nova York/NJ'},
+  {id:222,r:2,date:'23/06',time:'00h00',g:'J',h:{n:'Jordânia',f:'🇯🇴'},a:{n:'Argélia',f:'🇩🇿'},loc:'San Francisco'},
   {id:210,r:2,date:'23/06',time:'14h00',g:'K',h:{n:'Portugal',f:'🇵🇹'},a:{n:'Uzbequistão',f:'🇺🇿'},loc:'Houston'},
   {id:211,r:2,date:'23/06',time:'17h00',g:'L',h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'Gana',f:'🇬🇭'},loc:'Boston'},
-  {id:301,r:3,date:'24/06',time:'—',g:'C',h:{n:'Brasil',f:'🇧🇷'},a:{n:'Escócia',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},loc:'A confirmar',br:1},
-  {id:302,r:3,date:'24/06',time:'—',g:'C',h:{n:'Marrocos',f:'🇲🇦'},a:{n:'Haiti',f:'🇭🇹'},loc:'A confirmar'},
+  {id:223,r:2,date:'23/06',time:'20h00',g:'L',h:{n:'Panamá',f:'🇵🇦'},a:{n:'Croácia',f:'🇭🇷'},loc:'Toronto'},
+  {id:224,r:2,date:'23/06',time:'23h00',g:'K',h:{n:'Colômbia',f:'🇨🇴'},a:{n:'RD Congo',f:'🇨🇩'},loc:'Guadalajara'},
+  {id:307,r:3,date:'24/06',time:'16h00',g:'B',h:{n:'Suíça',f:'🇨🇭'},a:{n:'Canadá',f:'🇨🇦'},loc:'Vancouver'},
+  {id:308,r:3,date:'24/06',time:'16h00',g:'B',h:{n:'Bósnia',f:'🇧🇦'},a:{n:'Catar',f:'🇶🇦'},loc:'Seattle'},
+  {id:301,r:3,date:'24/06',time:'19h00',g:'C',h:{n:'Escócia',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},a:{n:'Brasil',f:'🇧🇷'},loc:'Miami',br:1},
+  {id:302,r:3,date:'24/06',time:'19h00',g:'C',h:{n:'Marrocos',f:'🇲🇦'},a:{n:'Haiti',f:'🇭🇹'},loc:'Atlanta'},
   {id:303,r:3,date:'24/06',time:'22h00',g:'A',h:{n:'Rep. Tcheca',f:'🇨🇿'},a:{n:'México',f:'🇲🇽'},loc:'Cidade do México'},
+  {id:309,r:3,date:'24/06',time:'22h00',g:'A',h:{n:'África do Sul',f:'🇿🇦'},a:{n:'Coreia do Sul',f:'🇰🇷'},loc:'Monterrey'},
+  {id:310,r:3,date:'25/06',time:'17h00',g:'E',h:{n:'Equador',f:'🇪🇨'},a:{n:'Alemanha',f:'🇩🇪'},loc:'Nova York/NJ'},
+  {id:311,r:3,date:'25/06',time:'17h00',g:'E',h:{n:'Curaçao',f:'🇨🇼'},a:{n:'Costa do Marfim',f:'🇨🇮'},loc:'Filadélfia'},
+  {id:312,r:3,date:'25/06',time:'20h00',g:'F',h:{n:'Japão',f:'🇯🇵'},a:{n:'Suécia',f:'🇸🇪'},loc:'Dallas'},
+  {id:313,r:3,date:'25/06',time:'20h00',g:'F',h:{n:'Tunísia',f:'🇹🇳'},a:{n:'Holanda',f:'🇳🇱'},loc:'Kansas City'},
+  {id:314,r:3,date:'25/06',time:'23h00',g:'D',h:{n:'Turquia',f:'🇹🇷'},a:{n:'Estados Unidos',f:'🇺🇸'},loc:'Los Angeles'},
+  {id:315,r:3,date:'25/06',time:'23h00',g:'D',h:{n:'Paraguai',f:'🇵🇾'},a:{n:'Austrália',f:'🇦🇺'},loc:'San Francisco'},
+  {id:316,r:3,date:'26/06',time:'16h00',g:'I',h:{n:'Senegal',f:'🇸🇳'},a:{n:'Iraque',f:'🇮🇶'},loc:'Toronto'},
+  {id:317,r:3,date:'26/06',time:'16h00',g:'I',h:{n:'Noruega',f:'🇳🇴'},a:{n:'França',f:'🇫🇷'},loc:'Boston'},
+  {id:318,r:3,date:'26/06',time:'21h00',g:'H',h:{n:'Cabo Verde',f:'🇨🇻'},a:{n:'Arábia Saudita',f:'🇸🇦'},loc:'Houston'},
   {id:304,r:3,date:'26/06',time:'21h00',g:'H',h:{n:'Uruguai',f:'🇺🇾'},a:{n:'Espanha',f:'🇪🇸'},loc:'Guadalajara'},
-  {id:305,r:3,date:'27/06',time:'23h00',g:'J',h:{n:'Argélia',f:'🇩🇿'},a:{n:'Áustria',f:'🇦🇹'},loc:'Kansas City'},
+  {id:319,r:3,date:'27/06',time:'00h00',g:'G',h:{n:'Egito',f:'🇪🇬'},a:{n:'Irã',f:'🇮🇷'},loc:'Seattle'},
+  {id:320,r:3,date:'27/06',time:'00h00',g:'G',h:{n:'Nova Zelândia',f:'🇳🇿'},a:{n:'Bélgica',f:'🇧🇪'},loc:'Vancouver'},
+  {id:321,r:3,date:'27/06',time:'18h00',g:'L',h:{n:'Panamá',f:'🇵🇦'},a:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},loc:'Nova York/NJ'},
+  {id:322,r:3,date:'27/06',time:'18h00',g:'L',h:{n:'Croácia',f:'🇭🇷'},a:{n:'Gana',f:'🇬🇭'},loc:'Filadélfia'},
   {id:306,r:3,date:'27/06',time:'20h30',g:'K',h:{n:'Colômbia',f:'🇨🇴'},a:{n:'Portugal',f:'🇵🇹'},loc:'Miami'},
+  {id:323,r:3,date:'27/06',time:'20h30',g:'K',h:{n:'RD Congo',f:'🇨🇩'},a:{n:'Uzbequistão',f:'🇺🇿'},loc:'Atlanta'},
+  {id:305,r:3,date:'27/06',time:'23h00',g:'J',h:{n:'Argélia',f:'🇩🇿'},a:{n:'Áustria',f:'🇦🇹'},loc:'Kansas City'},
+  {id:324,r:3,date:'27/06',time:'23h00',g:'J',h:{n:'Jordânia',f:'🇯🇴'},a:{n:'Argentina',f:'🇦🇷'},loc:'Dallas'},
 ];
+
+
 
 const FAVS=[
   {n:'Espanha',    f:'🇪🇸', p:100, odd:'5.50'},
@@ -430,7 +449,6 @@ const FAVS=[
 const ADMIN_USERNAME = 'atorresi'; // only this user sees the Admin tab
 
 // ===== STATE =====
-let API_KEY=localStorage.getItem('apifb_key')||'';
 let results={};
 let palpites={};
 let players={};
@@ -769,102 +787,9 @@ function updateShareLink(){
 setInterval(async()=>{ await loadSharedState(); },30000);
 
 // ===== API =====
-function saveKey(){
-  API_KEY=document.getElementById('aki').value.trim();
-  if(!API_KEY)return;
-  localStorage.setItem('apifb_key',API_KEY);
-  fetchAPI();
-}
 
-function setAS(st,msg){
-  const d=document.getElementById('adot'),t=document.getElementById('astxt');
-  d.className='api-dot '+st; t.textContent=msg;
-  if(st==='ok') document.getElementById('alast').textContent='· '+new Date().toLocaleTimeString('pt-BR');
-}
 
-async function fetchAPI(){
-  // wcup2026.org - free, no API key, CORS-enabled, live results
-  const APIS = [
-    'https://wcup2026.org/api/data.php?action=matches',
-    'https://wcup2026.org/api/data.php?action=today',
-  ];
 
-  // Team name mapping to our JOGOS names
-  const TM={
-    'Mexico':'Mexico','South Africa':'Africa do Sul','Korea Republic':'Coreia do Sul','South Korea':'Coreia do Sul',
-    'Czech Republic':'Rep. Tcheca','Canada':'Canada','Bosnia and Herzegovina':'Bosnia','Bosnia':'Bosnia',
-    'Qatar':'Catar','Switzerland':'Suica','Brazil':'Brasil','Morocco':'Marrocos',
-    'Haiti':'Haiti','Scotland':'Escocia','Germany':'Alemanha','Curacao':'Curacao',
-    'Ivory Coast':'Costa do Marfim',"Cote d'Ivoire":'Costa do Marfim','Ecuador':'Equador',
-    'Netherlands':'Holanda','Japan':'Japao','Sweden':'Suecia','Tunisia':'Tunisia',
-    'Belgium':'Belgica','Egypt':'Egito','Iran':'Ira','New Zealand':'Nova Zelandia',
-    'Spain':'Espanha','Saudi Arabia':'Arabia Saudita','Uruguay':'Uruguai',
-    'Cape Verde':'Cabo Verde','France':'Franca','Senegal':'Senegal','Iraq':'Iraque',
-    'Norway':'Noruega','Bolivia':'Bolivia','Argentina':'Argentina','Algeria':'Argelia',
-    'Austria':'Austria','Jordan':'Jordania','Portugal':'Portugal','DR Congo':'RD Congo',
-    'Jamaica':'Jamaica','Uzbekistan':'Uzbekistao','Colombia':'Colombia',
-    'England':'Inglaterra','Croatia':'Croacia','Ghana':'Gana','Panama':'Panama',
-    'United States':'Estados Unidos','USA':'Estados Unidos','Paraguay':'Paraguai',
-    'Australia':'Australia','Turkey':'Turquia','Kosovo':'Kosovo',
-    'Curacao':'Curacao','Curaçao':'Curacao'
-  };
-
-  function normalize(n){ return (TM[n]||n).toLowerCase().replace(/[^a-z]/g,''); }
-  function matchTeams(j, t1, t2){
-    const jh=normalize(j.h.n), ja=normalize(j.a.n);
-    const m1=normalize(t1), m2=normalize(t2);
-    return (jh.slice(0,4)===m1.slice(0,4)&&ja.slice(0,4)===m2.slice(0,4))||
-           (jh.slice(0,4)===m2.slice(0,4)&&ja.slice(0,4)===m1.slice(0,4));
-  }
-
-  let updated=0;
-  for(const url of APIS){
-    try{
-      const resp=await fetch(url);
-      if(!resp.ok) continue;
-      const data=await resp.json();
-      const matches=data.matches||data.results||data||[];
-      const arr=Array.isArray(matches)?matches:Object.values(matches);
-      
-      arr.forEach(m=>{
-        // Support multiple response formats
-        const t1=m.home_team||m.team1||m.homeTeam||'';
-        const t2=m.away_team||m.team2||m.awayTeam||'';
-        const s1=m.home_score!=null?m.home_score:(m.score?.ft?.[0]??m.home_goals??null);
-        const s2=m.away_score!=null?m.away_score:(m.score?.ft?.[1]??m.away_goals??null);
-        const status=m.status||m.matchStatus||'';
-        const finished=status==='FT'||status==='finished'||status==='completed'||
-                       status==='FINISHED'||m.finished===true||
-                       (s1!=null&&s2!=null&&(status===''||status==null));
-        
-        if(!finished||s1==null||s2==null) return;
-        
-        const jogo=JOGOS.find(j=>matchTeams(j,t1,t2));
-        if(jogo&&results[jogo.id]===undefined){
-          results[jogo.id]={h:parseInt(s1),a:parseInt(s2),status:'FT'};
-          updated++;
-        }
-      });
-      if(updated>0) break; // got results, no need for second API
-    }catch(e){
-      console.log('API error '+url+':', e.message);
-    }
-  }
-
-  if(updated>0){
-    console.log('API: '+updated+' resultados importados');
-    const sc=recalc(false);
-    try{
-      const c=await binGet()||{};
-      c.results=results;
-      c.scores=sc||{};
-      await binSet(c);
-    }catch(e){ console.log('binSet error:', e.message); }
-    recalc(true);
-    toast(updated+' resultado(s) atualizado(s) automaticamente!');
-  }
-  return updated;
-}
 
 function norm(s){return (s||'').toLowerCase().replace(/[^a-z]/g,'');}
 
@@ -1400,8 +1325,7 @@ async function init(){
     // Returning user on same device — go straight in
     await loadSharedState();
     renderFavs();
-    if(API_KEY){ fetchAPI(); document.getElementById('aki').value=API_KEY; }
-    else setAS('err','⏳ Copa começa 11/jun — insira sua chave API ou use o Admin para resultados.');
+    
     toast('Olá, ' + myName + '! 👋');
   } else {
     // Partial state — show login
