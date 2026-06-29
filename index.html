@@ -193,6 +193,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 14px}
     <button class="fb" onclick="fj('1',this)">1ª RODADA</button>
     <button class="fb" onclick="fj('2',this)">2ª RODADA</button>
     <button class="fb" onclick="fj('3',this)">3ª RODADA</button>
+    <button class="fb" onclick="fj('mm',this)">⚔️ MATA-MATA</button>
   </div>
   <div id="jc"></div>
 </div>
@@ -428,6 +429,38 @@ const JOGOS=[
   {id:323,r:3,date:'27/06',time:'20h30',g:'K',h:{n:'RD Congo',f:'🇨🇩'},a:{n:'Uzbequistão',f:'🇺🇿'},loc:'Atlanta'},
   {id:305,r:3,date:'27/06',time:'23h00',g:'J',h:{n:'Argélia',f:'🇩🇿'},a:{n:'Áustria',f:'🇦🇹'},loc:'Kansas City'},
   {id:324,r:3,date:'27/06',time:'23h00',g:'J',h:{n:'Jordânia',f:'🇯🇴'},a:{n:'Argentina',f:'🇦🇷'},loc:'Dallas'},
+  {id:401,r:4,date:'28/06',time:'13h00',g:'R32',h:{n:'Africa do Sul',f:'🇿🇦'},a:{n:'Canada',f:'🇨🇦'},loc:'Los Angeles'},
+  {id:402,r:4,date:'29/06',time:'11h00',g:'R32',h:{n:'Brasil',f:'🇧🇷'},a:{n:'Japao',f:'🇯🇵'},loc:'Houston',br:1},
+  {id:403,r:4,date:'29/06',time:'14h30',g:'R32',h:{n:'Alemanha',f:'🇩🇪'},a:{n:'Paraguai',f:'🇵🇾'},loc:'Boston'},
+  {id:404,r:4,date:'29/06',time:'19h00',g:'R32',h:{n:'Holanda',f:'🇳🇱'},a:{n:'Marrocos',f:'🇲🇦'},loc:'Monterrey'},
+  {id:405,r:4,date:'30/06',time:'11h00',g:'R32',h:{n:'Costa do Marfim',f:'🇨🇮'},a:{n:'Noruega',f:'🇳🇴'},loc:'Dallas'},
+  {id:406,r:4,date:'30/06',time:'15h00',g:'R32',h:{n:'Franca',f:'🇫🇷'},a:{n:'Suecia',f:'🇸🇪'},loc:'Nova York/NJ'},
+  {id:407,r:4,date:'30/06',time:'19h00',g:'R32',h:{n:'Mexico',f:'🇲🇽'},a:{n:'Equador',f:'🇪🇨'},loc:'Cidade do Mexico'},
+  {id:408,r:4,date:'01/07',time:'10h00',g:'R32',h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'RD Congo',f:'🇨🇩'},loc:'Atlanta'},
+  {id:409,r:4,date:'01/07',time:'14h00',g:'R32',h:{n:'Belgica',f:'🇧🇪'},a:{n:'Senegal',f:'🇸🇳'},loc:'Seattle'},
+  {id:410,r:4,date:'01/07',time:'18h00',g:'R32',h:{n:'Estados Unidos',f:'🇺🇸'},a:{n:'Bosnia',f:'🇧🇦'},loc:'San Francisco'},
+  {id:411,r:4,date:'02/07',time:'13h00',g:'R32',h:{n:'Espanha',f:'🇪🇸'},a:{n:'Austria',f:'🇦🇹'},loc:'Los Angeles'},
+  {id:412,r:4,date:'02/07',time:'17h00',g:'R32',h:{n:'Portugal',f:'🇵🇹'},a:{n:'Croacia',f:'🇭🇷'},loc:'Toronto'},
+  {id:413,r:4,date:'02/07',time:'21h00',g:'R32',h:{n:'Suica',f:'🇨🇭'},a:{n:'Ira',f:'🇮🇷'},loc:'Vancouver'},
+  {id:414,r:4,date:'03/07',time:'12h00',g:'R32',h:{n:'Australia',f:'🇦🇺'},a:{n:'Egito',f:'🇪🇬'},loc:'Dallas'},
+  {id:415,r:4,date:'03/07',time:'16h00',g:'R32',h:{n:'Argentina',f:'🇦🇷'},a:{n:'Cabo Verde',f:'🇨🇻'},loc:'Miami'},
+  {id:416,r:4,date:'03/07',time:'19h30',g:'R32',h:{n:'Colombia',f:'🇨🇴'},a:{n:'Gana',f:'🇬🇭'},loc:'Kansas City'},
+  {id:501,r:5,date:'04/07',time:'14h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:502,r:5,date:'04/07',time:'18h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:503,r:5,date:'05/07',time:'14h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:504,r:5,date:'05/07',time:'18h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:505,r:5,date:'06/07',time:'14h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:506,r:5,date:'06/07',time:'18h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:507,r:5,date:'07/07',time:'14h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:508,r:5,date:'07/07',time:'18h00',g:'R16',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:601,r:6,date:'09/07',time:'14h00',g:'QF',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:602,r:6,date:'09/07',time:'18h00',g:'QF',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:603,r:6,date:'10/07',time:'14h00',g:'QF',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:604,r:6,date:'11/07',time:'14h00',g:'QF',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:701,r:7,date:'14/07',time:'16h00',g:'SF',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:702,r:7,date:'15/07',time:'16h00',g:'SF',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'A definir'},
+  {id:801,r:8,date:'19/07',time:'16h00',g:'F',h:{n:'A definir',f:''},a:{n:'A definir',f:''},loc:'Nova York/NJ'},
+
 ];
 
 
@@ -829,7 +862,7 @@ function calcSt(){
     st[g]={};
     GD[g].t.forEach(t=>{st[g][t.n]={n:t.n,f:t.f,pj:0,v:0,e:0,d:0,gm:0,gs:0,sg:0,pts:0,form:[]};});
   });
-  JOGOS.filter(j=>j.r<=3).forEach(j=>{
+  JOGOS.forEach(j=>{
     const res=results[j.id];
     if(!res||res.h===undefined)return;
     const gs=st[j.g];
@@ -909,6 +942,7 @@ function renderJogos(filt){
   if(filt==='brasil') list=list.filter(j=>j.br);
   else if(filt==='live') list=list.filter(j=>{const r=results[j.id];return r&&['1H','2H','HT','ET','P'].includes(r.status);});
   else if(['1','2','3'].includes(filt)) list=list.filter(j=>j.r==filt);
+  else if(filt==='mm') list=list.filter(j=>j.r>=4);
   const byD={};
   list.forEach(j=>{(byD[j.date]||(byD[j.date]=[])).push(j);});
   const rl=['','1ª RODADA','2ª RODADA','3ª RODADA'];
