@@ -937,38 +937,72 @@ function renderJogos(filt){
 
 function renderBracket(st){
   if(!st) st=calcSt();
-  const r32=[];
-  const pairs=[['A','F'],['C','E'],['B','D'],['G','H'],['I','J'],['K','L'],['A','B'],['C','D']];
-  pairs.forEach(([g1,g2])=>{
-    const s1=st[g1],s2=st[g2];
-    r32.push({h:s1&&s1[0]?{n:s1[0].n,f:s1[0].f}:{},a:s2&&s2[1]?{n:s2[1].n,f:s2[1].f}:{}});
+
+  // 16 avos reais (confirmados pela FIFA)
+  const r32=[
+    {h:{n:'Africa do Sul',f:'🇿🇦'},a:{n:'Canada',f:'🇨🇦'},data:'28/06',time:'13h00',loc:'Los Angeles'},
+    {h:{n:'Brasil',f:'🇧🇷',br:1},a:{n:'Japao',f:'🇯🇵'},data:'29/06',time:'11h00',loc:'Houston'},
+    {h:{n:'Alemanha',f:'🇩🇪'},a:{n:'Paraguai',f:'🇵🇾'},data:'29/06',time:'14h30',loc:'Boston'},
+    {h:{n:'Holanda',f:'🇳🇱'},a:{n:'Marrocos',f:'🇲🇦'},data:'29/06',time:'19h00',loc:'Monterrey'},
+    {h:{n:'Costa do Marfim',f:'🇨🇮'},a:{n:'Noruega',f:'🇳🇴'},data:'30/06',time:'11h00',loc:'Dallas'},
+    {h:{n:'Franca',f:'🇫🇷'},a:{n:'Suecia',f:'🇸🇪'},data:'30/06',time:'15h00',loc:'Nova York/NJ'},
+    {h:{n:'Mexico',f:'🇲🇽'},a:{n:'Equador',f:'🇪🇨'},data:'30/06',time:'19h00',loc:'Cidade do Mexico'},
+    {h:{n:'Inglaterra',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},a:{n:'RD Congo',f:'🇨🇩'},data:'01/07',time:'10h00',loc:'Atlanta'},
+    {h:{n:'Belgica',f:'🇧🇪'},a:{n:'Senegal',f:'🇸🇳'},data:'01/07',time:'14h00',loc:'Seattle'},
+    {h:{n:'Estados Unidos',f:'🇺🇸'},a:{n:'Bosnia',f:'🇧🇦'},data:'01/07',time:'18h00',loc:'San Francisco'},
+    {h:{n:'Espanha',f:'🇪🇸'},a:{n:'Austria',f:'🇦🇹'},data:'02/07',time:'13h00',loc:'Los Angeles'},
+    {h:{n:'Portugal',f:'🇵🇹'},a:{n:'Croatia',f:'🇭🇷'},data:'02/07',time:'17h00',loc:'Toronto'},
+    {h:{n:'Suica',f:'🇨🇭'},a:{n:'Ira',f:'🇮🇷'},data:'02/07',time:'21h00',loc:'Vancouver'},
+    {h:{n:'Australia',f:'🇦🇺'},a:{n:'Egito',f:'🇪🇬'},data:'03/07',time:'12h00',loc:'Dallas'},
+    {h:{n:'Argentina',f:'🇦🇷'},a:{n:'Cabo Verde',f:'🇨🇻'},data:'03/07',time:'16h00',loc:'Miami'},
+    {h:{n:'Colombia',f:'🇨🇴'},a:{n:'Gana',f:'🇬🇭'},data:'03/07',time:'19h30',loc:'Kansas City'},
+  ];
+
+  // enrich with actual results if admin entered them
+  const r32e=r32.map((m,i)=>{
+    const k='ko_R32_'+i;
+    const res=results[k];
+    if(res) return {
+      h:{...m.h,score:res.h,w:res.h>res.a},
+      a:{...m.a,score:res.a,w:res.a>res.h},
+      data:m.data,time:m.time,loc:m.loc
+    };
+    return m;
   });
+
   const koSlots=(prefix,n)=>{
     const s=[];
     for(let i=0;i<n;i++){
-      const k=`ko_${prefix}_${i}`;
+      const k='ko_'+prefix+'_'+i;
       const r=results[k];
       s.push({h:r?{n:r.hn,f:r.hf||'',score:r.h,w:r.h>r.a}:{},a:r?{n:r.an,f:r.af||'',score:r.a,w:r.a>r.h}:{}});
     }
     return s;
   };
-  const slot=(s)=>`<div class="msl">
-    <div class="slt ${s.h&&s.h.w?'win':(!s.h||!s.h.n?'tbd':'')}">
-      <span>${s.h&&s.h.f||''}</span><span>${s.h&&s.h.n||'A definir'}</span>
-      ${s.h&&s.h.score!==undefined?`<span class="ssc ${s.h.w?'ws':''}">${s.h.score}</span>`:''}
-    </div>
-    <div class="slt ${s.a&&s.a.w?'win':(!s.a||!s.a.n?'tbd':'')}">
-      <span>${s.a&&s.a.f||''}</span><span>${s.a&&s.a.n||'A definir'}</span>
-      ${s.a&&s.a.score!==undefined?`<span class="ssc ${s.a.w?'ws':''}">${s.a.score}</span>`:''}
-    </div>
-  </div>`;
+
+  const slot=(s)=>{
+    const locked=isGameLocked&&s.data?isGameLocked({date:s.data,time:s.time||'00h00'}):false;
+    return`<div class="msl">
+      <div class="slt ${s.h&&s.h.w?'win':(!s.h||!s.h.n?'tbd':'')} ${s.h&&s.h.br?'br':''}">
+        <span>${s.h&&s.h.f||''}</span><span>${s.h&&s.h.n||'A definir'}</span>
+        ${s.h&&s.h.score!==undefined?`<span class="ssc ${s.h.w?'ws':''}">${s.h.score}</span>`:''}
+      </div>
+      <div class="slt ${s.a&&s.a.w?'win':(!s.a||!s.a.n?'tbd':'')} ${s.a&&s.a.br?'br':''}">
+        <span>${s.a&&s.a.f||''}</span><span>${s.a&&s.a.n||'A definir'}</span>
+        ${s.a&&s.a.score!==undefined?`<span class="ssc ${s.a.w?'ws':''}">${s.a.score}</span>`:''}
+      </div>
+      ${s.data?`<div style="font-size:9px;color:var(--muted);text-align:center;padding:2px 0">${s.data} ${s.time||''}</div>`:''}
+    </div>`;
+  };
+
   const rounds=[
-    {t:'32 AVOS (R32)',s:r32},
-    {t:'OITAVAS (16)',s:koSlots('R16',8)},
+    {t:'16-AVOS (R32)',s:r32e},
+    {t:'OITAVAS (R16)',s:koSlots('R16',8)},
     {t:'QUARTAS',s:koSlots('QF',4)},
     {t:'SEMIFINAL',s:koSlots('SF',2)},
     {t:'🏆 FINAL',s:koSlots('F',1)},
   ];
+
   document.getElementById('bkt').innerHTML=rounds.map(rd=>`
     <div class="rcol"><div class="rtit">${rd.t}</div>${rd.s.map(slot).join('')}</div>
   `).join('');
